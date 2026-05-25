@@ -183,20 +183,6 @@ function onModifyFile(event) {
                 <strong>{{ cvModifiable.modifiable_jusqu }}</strong>.
             </p>
             <form @submit.prevent="modifierCandidature">
-                <div
-                    v-if="Object.keys(modifyForm.errors).length"
-                    class="alert alert--error"
-                >
-                    <ul style="margin: 0; padding-left: 1.2rem">
-                        <li
-                            v-for="(msg, key) in modifyForm.errors"
-                            :key="key"
-                        >
-                            {{ msg }}
-                        </li>
-                    </ul>
-                </div>
-
                 <div class="depot-steps">
                     <section class="depot-step card">
                         <h2 class="card__title card__title--sm">
@@ -206,7 +192,7 @@ function onModifyFile(event) {
                             v-model="modifyForm.entreprise_id"
                             :items="entrepriseItems"
                             label="Rechercher une entreprise"
-                            placeholder="Tapez le nom de l'entreprise…"
+                            placeholder="Saisir le nom de l'entreprise…"
                         />
                         <div
                             v-if="selectedEntrepriseModify"
@@ -231,7 +217,7 @@ function onModifyFile(event) {
                             v-model="modifyForm.poste_id"
                             :items="posteItemsModify"
                             label="Rechercher un poste"
-                            placeholder="Tapez le titre du poste…"
+                            placeholder="Saisir le titre du poste…"
                             :disabled="!modifyForm.entreprise_id"
                             empty-text="Choisissez d'abord une entreprise."
                         />
@@ -303,7 +289,7 @@ function onModifyFile(event) {
                     v-model="form.entreprise_id"
                     :items="entrepriseItems"
                     label="Entreprise"
-                    placeholder="Ex. TechCorp, DataSoft…"
+                    placeholder="Saisir le nom de l'entreprise…"
                 />
                 <div v-if="selectedEntreprise" class="info-panel">
                     <h3>{{ selectedEntreprise.nom }}</h3>
@@ -329,7 +315,7 @@ function onModifyFile(event) {
                     v-model="form.poste_id"
                     :items="posteItems"
                     label="Poste"
-                    placeholder="Ex. Développeur Laravel…"
+                    placeholder="Saisir le titre du poste…"
                     :disabled="!form.entreprise_id"
                     empty-text="Sélectionnez d'abord une entreprise."
                 />
@@ -351,23 +337,6 @@ function onModifyFile(event) {
                 <p class="card__lead">
                     L'analyse RH commencera {{ graceHours }} h après l'envoi.
                 </p>
-
-                <div v-if="form.errors.depot" class="alert alert--error">
-                    {{ form.errors.depot }}
-                </div>
-                <div
-                    v-if="
-                        Object.keys(form.errors).filter((k) => k !== 'depot')
-                            .length
-                    "
-                    class="alert alert--error"
-                >
-                    <ul style="margin: 0; padding-left: 1.2rem">
-                        <template v-for="(msg, key) in form.errors" :key="key">
-                            <li v-if="key !== 'depot'">{{ msg }}</li>
-                        </template>
-                    </ul>
-                </div>
 
                 <form @submit.prevent="submit">
                     <div class="form-group">

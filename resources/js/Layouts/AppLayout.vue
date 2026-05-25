@@ -13,7 +13,6 @@ defineProps({
 useFlashToast();
 
 function cleanupStaleOverlays() {
-    document.querySelectorAll(".notif-bell__backdrop").forEach((el) => el.remove());
     const bar = document.getElementById("nprogress");
     if (bar) {
         try {
@@ -37,6 +36,17 @@ const peutDeposer = computed(() => {
 });
 
 const currentPath = computed(() => page.url.split("?")[0]);
+const currentQuery = computed(() => {
+    const i = page.url.indexOf("?");
+    return i >= 0 ? page.url.slice(i + 1) : "";
+});
+
+function consulteDepuisAnalyse() {
+    return (
+        /^\/rh\/cvs\/\d+\/consulter/.test(currentPath.value) &&
+        currentQuery.value.includes("depuis=analyse")
+    );
+}
 
 function isNavActive(href) {
     const p = currentPath.value;
@@ -45,13 +55,17 @@ function isNavActive(href) {
         return p === "/rh" || p === "/rh/";
     }
     if (href === "/rh/cvs/liste") {
-        return p === "/rh/cvs/liste" || /^\/rh\/cvs\/\d+\/consulter/.test(p);
+        return (
+            p === "/rh/cvs/liste" ||
+            (/^\/rh\/cvs\/\d+\/consulter/.test(p) && !consulteDepuisAnalyse())
+        );
     }
     if (href === "/rh/cvs") {
         return (
             p === "/rh/cvs" ||
             p === "/rh/filtrer" ||
-            p === "/rh/filtrer/resultats"
+            p === "/rh/filtrer/resultats" ||
+            consulteDepuisAnalyse()
         );
     }
     if (href === "/rh/postes") {

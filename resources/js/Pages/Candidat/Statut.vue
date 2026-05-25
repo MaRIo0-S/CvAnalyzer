@@ -1,17 +1,11 @@
 <script setup>
 import { Link } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
+import { badgeClass } from "@/utils/cvList";
 
 defineProps({
     cv: Object,
 });
-
-const badges = {
-    cv_recu: "badge--recu",
-    en_cours_analyse: "badge--analyse",
-    valide: "badge--valide",
-    non_valide: "badge--refuse",
-};
 </script>
 
 <template>
@@ -34,7 +28,7 @@ const badges = {
 
         <div v-else class="card">
             <p style="margin-bottom: 1rem">
-                <span :class="['badge', badges[cv.statut] || 'badge--recu']">{{
+                <span :class="['badge', badgeClass(cv.statut)]">{{
                     cv.statut_label
                 }}</span>
             </p>

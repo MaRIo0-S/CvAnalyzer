@@ -52,8 +52,11 @@ Route::middleware(['auth', 'role:sous_admin'])->prefix('rh')->group(function () 
     Route::get('/cvs', [DashboardController::class, 'filtrerPage'])->name('rh.filtrer.page');
     Route::post('/filtrer', [DashboardController::class, 'filtrer'])->name('rh.filtrer');
     Route::post('/filtrer/confirmer', [DashboardController::class, 'confirmerAnalyse'])->name('rh.filtrer.confirmer');
+    Route::post('/filtrer/annuler', [DashboardController::class, 'annulerAnalyse'])->name('rh.filtrer.annuler');
     Route::get('/filtrer/resultats', [DashboardController::class, 'derniereAnalyse'])->name('rh.filtrer.resultats');
     Route::patch('/cvs/{cv}/valider', [CvController::class, 'valider'])->name('rh.cv.valider');
+    Route::delete('/cvs/{cv}/decision-provisoire', [CvController::class, 'annulerDecisionProvisoire'])
+        ->name('rh.cv.decision.annuler');
     Route::get('/cvs/liste', [CvController::class, 'index'])->name('rh.cvs.liste');
     Route::get('/cvs/zip', [CvController::class, 'telechargerZip'])->name('rh.cvs.zip');
     Route::get('/cvs/{cv}/consulter', [CvController::class, 'show'])->name('rh.cv.consulter');

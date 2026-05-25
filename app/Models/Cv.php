@@ -72,14 +72,6 @@ class Cv extends Model
         return $this->modifiable_jusqu === null || $this->modifiable_jusqu <= now();
     }
 
-    public function scopePretPourAnalyse($query)
-    {
-        return $query->where(function ($q) {
-            $q->whereNull('modifiable_jusqu')
-                ->orWhere('modifiable_jusqu', '<=', now());
-        });
-    }
-
     public static function libelleAvecDecision(?string $decisionProvisoire, string $libelleDefaut): string
     {
         return match ($decisionProvisoire) {
@@ -98,51 +90,73 @@ class Cv extends Model
         };
     }
 
-    public function pourRh(?string $decisionProvisoire = null, bool $avecEntreprise = false): array
+    /**
+     * Affichage RH : lot provisoire = « en cours d'analyse » sans changer la BDD.
+     *
+     * @return array{statut_affichage: string, statut_label: string}
+     */
+    public function statutPourAffichageRh(?string $decisionProvisoire, bool $lotProvisoire = false): array
     {
-        $analyse = $this->donneesAnalyseAffichage();
-        $statut = $this->statut->value;
+        if ($decisionProvisoire) {
+            return [
+                'statut_affichage' => self::statutAffichage($decisionProvisoire, $this->statut->value),
+                'statut_label' => self::libelleAvecDecision($decisionProvisoire, $this->statut->label()),
+            ];
+        }
 
-        $row = [
+        if ($lotProvisoire) {
+            return [
+                'statut_affichage' => StatutCv::EnCoursAnalyse->value,
+                'statut_label' => StatutCv::EnCoursAnalyse->label(),
+            ];
+        }
+
+        return [
+            'statut_affichage' => $this->statut->value,
+            'statut_label' => $this->statut->label(),
+        ];
+    }
+
+    public function pourRh(?string $decisionProvisoire = null, bool $lotProvisoire = false): array
+    {
+        $analyse = $this->donneesAnalyseAffichage($lotProvisoire);
+        $statut = $this->statut->value;
+        $affichage = $this->statutPourAffichageRh($decisionProvisoire, $lotProvisoire);
+
+        return [
             'id' => $this->id,
             'poste_id' => $this->poste_id,
             'nom_candidat' => $this->nom_candidat ?: 'Candidat #'.$this->id,
             'email_candidat' => $this->email_candidat,
             'poste' => $this->poste?->titre,
             'statut' => $statut,
-            'statut_affichage' => self::statutAffichage($decisionProvisoire, $statut),
-            'statut_label' => self::libelleAvecDecision($decisionProvisoire, $this->statut->label()),
+            'statut_affichage' => $affichage['statut_affichage'],
+            'statut_label' => $affichage['statut_label'],
             'decision_provisoire' => $decisionProvisoire,
             'date_depot' => $this->date_depot?->format('d/m/Y H:i'),
             'date_depot_ts' => $this->date_depot?->timestamp ?? 0,
             'format_fichier' => $this->format_fichier,
             'score' => $analyse['score'],
             'nombre_matches' => $analyse['nombre_matches'],
-            'mots_cles_matches' => $this->statut === StatutCv::CvRecu
+            'mots_cles_matches' => ($this->statut === StatutCv::CvRecu && ! $lotProvisoire)
                 ? []
                 : ($this->resultatAnalyse?->mots_cles_matches ?? []),
             'date_analyse' => $analyse['date_analyse'],
             'date_analyse_ts' => $analyse['date_analyse_ts'],
             'download_url' => route('rh.cv.telecharger', $this),
-            'peut_analyser' => $this->pretPourAnalyse(),
+            'modifiable_par_candidat' => $this->statut === StatutCv::CvRecu && $this->peutModifier(),
+            'pret_premiere_analyse' => $this->statut === StatutCv::CvRecu && $this->pretPourAnalyse(),
         ];
-
-        if ($avecEntreprise) {
-            $row['entreprise'] = $this->entreprise?->nom;
-        }
-
-        return $row;
     }
 
-    public function donneesAnalyseAffichage(): array
+    public function donneesAnalyseAffichage(bool $lotProvisoire = false): array
     {
-        if ($this->statut === StatutCv::CvRecu) {
+        if ($this->statut === StatutCv::CvRecu && ! $lotProvisoire) {
             return [
                 'score' => null,
                 'nombre_matches' => null,
                 'date_analyse' => null,
                 'date_analyse_ts' => 0,
-                'a_analyse' => false,
             ];
         }
 
@@ -153,7 +167,6 @@ class Cv extends Model
             'nombre_matches' => $r?->nombre_matches,
             'date_analyse' => $r?->date_analyse?->format('d/m/Y H:i'),
             'date_analyse_ts' => $r?->date_analyse?->timestamp ?? 0,
-            'a_analyse' => $r !== null,
         ];
     }
 }

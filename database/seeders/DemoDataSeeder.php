@@ -277,7 +277,9 @@ class DemoDataSeeder extends Seeder
                     'texte_extrait' => $data['texte'],
                     'statut' => $data['statut'],
                     'date_depot' => $data['date_depot'] ?? now()->subDays(3 + $i),
-                    'modifiable_jusqu' => ($data['date_depot'] ?? now())->copy()->addDay(),
+                    'modifiable_jusqu' => ($data['statut'] ?? StatutCv::CvRecu) === StatutCv::CvRecu
+                        ? ($data['date_depot'] ?? now())->copy()->addDay()
+                        : ($data['date_depot'] ?? now())->copy()->subHour(),
                 ]
             );
         }

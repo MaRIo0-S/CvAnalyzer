@@ -18,27 +18,23 @@ const props = defineProps({
 });
 
 const confirmerForm = useForm({});
+const annulerForm = useForm({});
 const toast = useToastStore();
 const reloadListe = () =>
     router.visit("/rh/filtrer/resultats", { preserveScroll: true });
-const { peutDecider, valider, refuser, mailtoCandidat } = useCvDecision({
-    lotEnAttente: true,
-    afterSuccess: (cv, { valide }) => {
-        reloadListe();
-        if (valide) {
-            setTimeout(() => {
-                window.location.href = mailtoCandidat(cv);
-            }, 200);
-        }
-    },
-});
+const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser } =
+    useCvDecision({
+        lotEnAttente: true,
+        afterSuccess: () => reloadListe(),
+    });
 const recherche = ref("");
+const filtreMotCle = ref("");
 const filtrePoste = ref("");
 const filtreStatut = ref("");
 const tri = ref("matches_desc");
 const selectedIds = ref([]);
 
-watch([filtrePoste, filtreStatut], () => {
+watch([filtrePoste, filtreStatut, filtreMotCle], () => {
     selectedIds.value = [];
 });
 
@@ -47,8 +43,11 @@ const cvsFiltres = computed(() => {
         recherche: recherche.value,
         filtrePoste: filtrePoste.value,
         filtreStatut: filtreStatut.value,
+        filtreMotCle: filtreMotCle.value,
     });
-    return [...list].sort((a, b) => trierCvs(a, b, tri.value));
+    return [...list].sort((a, b) =>
+        trierCvs(a, b, tri.value, { nullSafeScores: true })
+    );
 });
 
 const allVisibleSelected = computed(() => {
@@ -94,16 +93,12 @@ function toggleSelectAll() {
 }
 
 function telechargerZip(ids) {
-    const params = new URLSearchParams();
-    if (ids?.length) {
-        ids.forEach((id) => params.append("cv_ids[]", String(id)));
-    } else if (filtrePoste.value) {
-        params.set("poste_id", String(filtrePoste.value));
-        if (filtreStatut.value) params.set("statut", filtreStatut.value);
-    } else {
-        toast.error("Cochez des CV ou filtrez par poste.");
+    if (!ids?.length) {
+        toast.error("Cochez au moins un CV (ou « Tout sélectionner »).");
         return;
     }
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("cv_ids[]", String(id)));
     window.location.href = `${props.zipUrl}?${params.toString()}`;
 }
 
@@ -111,9 +106,20 @@ function confirmerAnalyse() {
     const msg =
         props.nbDecisions > 0
             ? `Confirmer l'analyse et appliquer ${props.nbDecisions} décision(s) ? Les e-mails seront envoyés.`
-            : "Confirmer l'analyse ? Les CV sans décision restent en cours d'examen avec leurs scores.";
+            : "Confirmer l'analyse ? Les CV sans décision passent en cours d'examen (e-mails envoyés).";
     if (!confirm(msg)) return;
     confirmerForm.post("/rh/filtrer/confirmer");
+}
+
+function annulerAnalyse() {
+    if (
+        !confirm(
+            "Effacer cette analyse ? Les scores provisoires seront supprimés, sans modifier les statuts ni envoyer d'e-mails."
+        )
+    ) {
+        return;
+    }
+    annulerForm.post("/rh/filtrer/annuler");
 }
 </script>
 
@@ -129,10 +135,11 @@ function confirmerAnalyse() {
                 </span>
             </p>
             <p class="text-muted" style="margin-top: 0.5rem">
-                Validez ou refusez chaque CV, puis confirmez pour appliquer les
-                décisions et envoyer les e-mails. Les CV laissés sans décision
-                restent <strong>en cours d'analyse</strong>. Modifier les
-                mots-clés annule cette session sans appliquer vos choix.
+                Ici, les CV apparaissent <strong>en cours d'analyse</strong> pour
+                travailler sur le lot. Validez ou refusez, puis confirmez : seule
+                la confirmation applique les statuts définitifs et envoie les
+                e-mails (la liste des CV reçus et la page candidat restent
+                inchangées avant cela).
             </p>
             <div class="table-actions" style="margin-top: 0.75rem">
                 <Link href="/rh/cvs" class="btn btn--ghost">
@@ -141,13 +148,21 @@ function confirmerAnalyse() {
                 <button
                     type="button"
                     class="btn btn--primary"
-                    :disabled="confirmerForm.processing"
+                    :disabled="confirmerForm.processing || annulerForm.processing"
                     @click="confirmerAnalyse"
                 >
                     Confirmer l'analyse
                     <template v-if="nbDecisions">
                         ({{ nbDecisions }} décision{{ nbDecisions > 1 ? "s" : "" }})
                     </template>
+                </button>
+                <button
+                    type="button"
+                    class="btn btn--ghost btn--danger"
+                    :disabled="confirmerForm.processing || annulerForm.processing"
+                    @click="annulerAnalyse"
+                >
+                    Effacer cette analyse
                 </button>
             </div>
         </div>
@@ -171,10 +186,12 @@ function confirmerAnalyse() {
             </div>
         </div>
 
-        <div class="card cvs-liste-toolbar">
-            <h2 class="card__title card__title--sm">Recherche et filtres</h2>
-            <div class="cvs-liste-toolbar__grid">
-                <div class="form-group">
+        <div class="card cvs-liste-toolbar cvs-liste-toolbar--wide">
+            <h2 class="card__title card__title--sm">Filtres et tri</h2>
+            <div
+                class="cvs-liste-toolbar__grid cvs-liste-toolbar__grid--filters-analyse"
+            >
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Rechercher</label>
                     <input
                         v-model="recherche"
@@ -182,10 +199,18 @@ function confirmerAnalyse() {
                         placeholder="Nom ou e-mail…"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group cvs-liste-toolbar__field">
+                    <label>Mot-clé trouvé</label>
+                    <input
+                        v-model="filtreMotCle"
+                        type="search"
+                        placeholder="Ex. Laravel, vue…"
+                    />
+                </div>
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Poste</label>
                     <select v-model="filtrePoste">
-                        <option value="">— Tous —</option>
+                        <option value="">— Tous les postes —</option>
                         <option
                             v-for="p in postes"
                             :key="p.id"
@@ -195,24 +220,42 @@ function confirmerAnalyse() {
                         </option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Statut</label>
+                <div class="form-group cvs-liste-toolbar__field">
+                    <label>Statut affiché</label>
                     <select v-model="filtreStatut">
                         <option value="">— Tous —</option>
-                        <option value="en_cours_analyse">En analyse</option>
-                        <option value="valide">Validé</option>
-                        <option value="non_valide">Non validé</option>
+                        <option value="en_cours_analyse">
+                            En cours d'analyse
+                        </option>
+                        <option value="valide">Validé (à confirmer inclus)</option>
+                        <option value="non_valide">
+                            Refusé (à confirmer inclus)
+                        </option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Trier par</label>
-                    <select v-model="tri">
+                    <select
+                        v-model="tri"
+                        class="cvs-liste-toolbar__select--wide"
+                    >
                         <option value="matches_desc">Mots-clés (élevé)</option>
                         <option value="matches_asc">Mots-clés (faible)</option>
                         <option value="score_desc">Score % (élevé)</option>
                         <option value="score_asc">Score % (faible)</option>
+                        <option value="date_analyse_desc">
+                            Date d'analyse (récent)
+                        </option>
+                        <option value="date_analyse_asc">
+                            Date d'analyse (ancien)
+                        </option>
                         <option value="statut">Statut</option>
-                        <option value="date_depot_desc">Dépôt (récent)</option>
+                        <option value="date_depot_desc">
+                            Date de dépôt (récent)
+                        </option>
+                        <option value="date_depot_asc">
+                            Date de dépôt (ancien)
+                        </option>
                     </select>
                 </div>
             </div>
@@ -223,7 +266,7 @@ function confirmerAnalyse() {
                         :checked="allVisibleSelected"
                         @change="toggleSelectAll"
                     />
-                    Tout sélectionner ({{ cvsFiltres.length }})
+                    Tout sélectionner ({{ cvsFiltres.length }} affichés)
                 </label>
                 <button
                     type="button"
@@ -233,14 +276,9 @@ function confirmerAnalyse() {
                 >
                     ZIP — {{ selectedIds.length }} sélectionné(s)
                 </button>
-                <button
-                    type="button"
-                    class="btn btn--secondary"
-                    :disabled="!filtrePoste"
-                    @click="telechargerZip()"
-                >
-                    ZIP — poste filtré
-                </button>
+                <span class="text-muted">
+                    {{ cvsFiltres.length }} CV affiché(s)
+                </span>
             </div>
         </div>
 
@@ -277,26 +315,44 @@ function confirmerAnalyse() {
                     <dl class="cvs-row__meta">
                         <div class="cvs-row__meta-item">
                             <dt>Poste</dt>
-                            <dd>{{ cv.poste }}</dd>
+                            <dd>{{ cv.poste || "—" }}</dd>
+                        </div>
+                        <div class="cvs-row__meta-item">
+                            <dt>Dépôt</dt>
+                            <dd>{{ cv.date_depot }}</dd>
                         </div>
                         <div class="cvs-row__meta-item">
                             <dt>Score</dt>
                             <dd>
-                                <span class="score-pill">{{ cv.score }}%</span>
+                                <span
+                                    v-if="cv.score != null"
+                                    class="score-pill"
+                                    >{{ cv.score }}%</span
+                                >
+                                <span v-else class="text-muted">—</span>
                             </dd>
                         </div>
                         <div class="cvs-row__meta-item">
                             <dt>Mots-clés</dt>
                             <dd>
-                                {{ cv.nombre_matches }} —
-                                <small v-if="cv.mots_cles_matches?.length">{{
-                                    cv.mots_cles_matches.join(", ")
-                                }}</small>
+                                <template v-if="cv.nombre_matches != null">
+                                    {{ cv.nombre_matches }} trouvé(s)
+                                </template>
+                                <span v-else class="text-muted">—</span>
                             </dd>
                         </div>
                         <div class="cvs-row__meta-item">
-                            <dt>Dépôt</dt>
-                            <dd>{{ cv.date_depot }}</dd>
+                            <dt>Analyse</dt>
+                            <dd>
+                                <span v-if="cv.date_analyse">{{
+                                    cv.date_analyse
+                                }}</span>
+                                <span v-else class="text-muted">—</span>
+                            </dd>
+                        </div>
+                        <div class="cvs-row__meta-item">
+                            <dt>Format</dt>
+                            <dd>{{ cv.format_fichier?.toUpperCase() }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -314,22 +370,35 @@ function confirmerAnalyse() {
                     >
                         Consulter
                     </Link>
-                    <button
-                        v-if="peutDecider(cv)"
-                        type="button"
-                        class="btn btn--success btn--sm"
-                        @click="valider(cv)"
+                    <div
+                        v-if="peutDecider(cv) || aDecisionProvisoire(cv)"
+                        class="cvs-row__actions-lot"
                     >
-                        Valider
-                    </button>
-                    <button
-                        v-if="peutDecider(cv)"
-                        type="button"
-                        class="btn btn--danger btn--sm"
-                        @click="refuser(cv)"
-                    >
-                        Refuser
-                    </button>
+                        <button
+                            v-if="aDecisionProvisoire(cv)"
+                            type="button"
+                            class="btn btn--ghost btn--sm"
+                            @click="annulerDecision(cv)"
+                        >
+                            Annuler la décision
+                        </button>
+                        <button
+                            v-if="peutDecider(cv) || cv.decision_provisoire !== 'valide'"
+                            type="button"
+                            class="btn btn--success btn--sm"
+                            @click="valider(cv)"
+                        >
+                            Valider
+                        </button>
+                        <button
+                            v-if="peutDecider(cv) || cv.decision_provisoire !== 'non_valide'"
+                            type="button"
+                            class="btn btn--danger btn--sm"
+                            @click="refuser(cv)"
+                        >
+                            Refuser
+                        </button>
+                    </div>
                 </div>
             </article>
         </div>

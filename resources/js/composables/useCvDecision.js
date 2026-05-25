@@ -4,8 +4,42 @@ import { useToastStore } from "@/stores/toast";
 export function useCvDecision({ lotEnAttente = false, afterSuccess = null } = {}) {
     const toast = useToastStore();
 
+    function aDecisionProvisoire(cv) {
+        return (
+            lotEnAttente &&
+            (cv?.decision_provisoire === "valide" ||
+                cv?.decision_provisoire === "non_valide")
+        );
+    }
+
     function peutDecider(cv) {
-        return cv?.statut === "en_cours_analyse";
+        if (aDecisionProvisoire(cv)) {
+            return false;
+        }
+        const affichage = cv?.statut_affichage || cv?.statut;
+        return affichage === "en_cours_analyse";
+    }
+
+    function annulerDecision(cv) {
+        if (!aDecisionProvisoire(cv)) {
+            return;
+        }
+        if (
+            !confirm(
+                "Retirer la décision provisoire ? Le CV repassera en cours d'analyse dans ce lot (sans effet sur le candidat tant que l'analyse n'est pas confirmée)."
+            )
+        ) {
+            return;
+        }
+
+        router.delete(`/rh/cvs/${cv.id}/decision-provisoire`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (typeof afterSuccess === "function") {
+                    afterSuccess(cv, { annulee: true });
+                }
+            },
+        });
     }
 
     function mailtoCandidat(cv) {
@@ -79,5 +113,12 @@ export function useCvDecision({ lotEnAttente = false, afterSuccess = null } = {}
         );
     }
 
-    return { peutDecider, mailtoCandidat, valider, refuser };
+    return {
+        peutDecider,
+        aDecisionProvisoire,
+        annulerDecision,
+        mailtoCandidat,
+        valider,
+        refuser,
+    };
 }

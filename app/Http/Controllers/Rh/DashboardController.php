@@ -26,10 +26,8 @@ class DashboardController extends Controller
 
     public function filtrerPage(Request $request)
     {
-        $eid = $this->entrepriseId($request);
-
         return Inertia::render('Rh/Filtrer', [
-            'postes' => Poste::where('entreprise_id', $eid)
+            'postes' => $this->queryPostesRh($request)
                 ->where('est_ouvert', true)
                 ->orderBy('titre')
                 ->get(['id', 'titre']),
@@ -40,9 +38,7 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $eid = $this->entrepriseId($request);
-
-        $parStatut = Cv::where('entreprise_id', $eid)
+        $parStatut = $this->queryCvsRh($request)
             ->get()
             ->groupBy(fn (Cv $cv) => $cv->statut->value)
             ->map->count();
@@ -55,7 +51,7 @@ class DashboardController extends Controller
             'non_valides' => $parStatut->get(StatutCv::NonValide->value, 0),
         ];
 
-        $parPoste = Poste::where('entreprise_id', $eid)
+        $parPoste = $this->queryPostesRh($request)
             ->withCount('cvs')
             ->whereHas('cvs')
             ->orderByDesc('cvs_count')
@@ -78,13 +74,13 @@ class DashboardController extends Controller
 
     public function filtrer(Request $request)
     {
-        $eid = $this->entrepriseId($request);
+        $rhId = $this->rhUserId($request);
 
         $validated = $request->validate([
             'poste_id' => [
                 'nullable',
                 Rule::exists('postes', 'id')->where(
-                    fn ($q) => $q->where('entreprise_id', $eid)
+                    fn ($q) => $q->where('user_id', $rhId)
                 ),
             ],
             'mots_cles' => ['required', 'array', 'min:1'],
@@ -103,11 +99,15 @@ class DashboardController extends Controller
         $this->enregistrerMotsCles($request, $mots, $validated['poste_id'] ?? null);
 
         if ($this->sessionAnalyse($request)) {
-            $this->annulerAnalyseProvisoire($request, $eid);
+            $this->annulerAnalyseProvisoire($request);
         }
 
         $nonValidesUniquement = $request->boolean('inclure_non_valides');
-        $eligibles = $this->cvsEligiblesAnalyse($eid, $validated['poste_id'] ?? null, $nonValidesUniquement);
+        $eligibles = $this->cvsEligiblesAnalyse(
+            $request,
+            $validated['poste_id'] ?? null,
+            $nonValidesUniquement
+        );
 
         if ($eligibles->isEmpty()) {
             $msg = $nonValidesUniquement
@@ -123,27 +123,25 @@ class DashboardController extends Controller
 
         $ids = $eligibles->pluck('id')->all();
 
-        $cvs = Cv::with(['poste', 'entreprise', 'resultatAnalyse'])
+        $cvs = Cv::with(['poste', 'resultatAnalyse'])
             ->whereIn('id', $ids)
             ->get();
 
         $this->serviceAnalyse->analyserCollection($cvs, $mots, notifier: false);
 
-        $cvsList = Cv::with(['poste', 'entreprise', 'resultatAnalyse'])
-            ->where('entreprise_id', $eid)
+        $cvsList = $this->queryCvsRh($request)
+            ->with(['poste', 'resultatAnalyse'])
             ->whereIn('id', $ids)
-            ->where('statut', StatutCv::EnCoursAnalyse)
             ->get()
             ->sortByDesc(fn (Cv $cv) => $cv->resultatAnalyse?->nombre_matches ?? 0)
             ->values()
-            ->map(fn (Cv $cv) => $cv->pourRh(avecEntreprise: true))
+            ->map(fn (Cv $cv) => $cv->pourRh(lotProvisoire: true))
             ->all();
 
         $request->session()->put(self::SESSION_ANALYSE, [
             'cv_ids' => collect($cvsList)->pluck('id')->all(),
             'decisions' => [],
             'mots_cles' => $mots,
-            'entreprise' => $request->user()->entreprise?->nom,
             'en_attente_confirmation' => true,
             'mode' => $nonValidesUniquement ? 'non_valides' : 'standard',
             'statuts_initiaux' => $statutsInitiaux,
@@ -161,7 +159,6 @@ class DashboardController extends Controller
                 ->withErrors(['decision' => 'Aucune analyse en attente de confirmation.']);
         }
 
-        $eid = $this->entrepriseId($request);
         $statutsInitiaux = $data['statuts_initiaux'] ?? [];
         $decisions = $data['decisions'] ?? [];
         $mode = $data['mode'] ?? 'standard';
@@ -169,8 +166,8 @@ class DashboardController extends Controller
         $nbDecisions = 0;
         $nbMails = 0;
 
-        $cvs = Cv::with(['poste', 'entreprise'])
-            ->where('entreprise_id', $eid)
+        $cvs = $this->queryCvsRh($request)
+            ->with('poste')
             ->whereIn('id', $cvIds)
             ->get()
             ->keyBy('id');
@@ -190,7 +187,7 @@ class DashboardController extends Controller
 
         foreach ($cvIds as $cvId) {
             $cv = $cvs->get($cvId);
-            if (! $cv || $cv->statut !== StatutCv::EnCoursAnalyse) {
+            if (! $cv) {
                 continue;
             }
 
@@ -224,8 +221,25 @@ class DashboardController extends Controller
                 continue;
             }
 
-            if ($initial === StatutCv::CvRecu && filled($cv->email_candidat)) {
-                if (StatutCandidatureMail::envoyerSiChange($cv, StatutCv::CvRecu, StatutCv::EnCoursAnalyse)) {
+            if ($initial === StatutCv::CvRecu) {
+                $ancien = $cv->statut;
+                $cv->update([
+                    'statut' => StatutCv::EnCoursAnalyse,
+                    'modifiable_jusqu' => now(),
+                ]);
+                $cv->refresh();
+                if (StatutCandidatureMail::envoyerSiChange($cv, $ancien, StatutCv::EnCoursAnalyse)) {
+                    $nbMails++;
+                }
+
+                continue;
+            }
+
+            if ($initial === StatutCv::EnCoursAnalyse && $cv->statut !== StatutCv::EnCoursAnalyse) {
+                $ancien = $cv->statut;
+                $cv->update(['statut' => StatutCv::EnCoursAnalyse]);
+                $cv->refresh();
+                if (StatutCandidatureMail::envoyerSiChange($cv, $ancien, StatutCv::EnCoursAnalyse)) {
                     $nbMails++;
                 }
             }
@@ -244,6 +258,19 @@ class DashboardController extends Controller
         return redirect()->route('rh.cvs.liste')->with('success', $msg);
     }
 
+    public function annulerAnalyse(Request $request)
+    {
+        if (! $this->lotAnalyseEnAttente($request)) {
+            return redirect()->route('rh.filtrer.page')
+                ->withErrors(['analyse' => 'Aucune analyse en attente de confirmation.']);
+        }
+
+        $this->annulerAnalyseProvisoire($request);
+
+        return redirect()->route('rh.filtrer.page')
+            ->with('success', 'Analyse annulée. Aucun statut ni e-mail n\'a été modifié.');
+    }
+
     public function derniereAnalyse(Request $request)
     {
         $data = $this->sessionAnalyse($request);
@@ -252,21 +279,16 @@ class DashboardController extends Controller
             return redirect()->route('rh.filtrer.page');
         }
 
-        $eid = $this->entrepriseId($request);
         $decisions = $data['decisions'] ?? [];
         $cvIds = $data['cv_ids'] ?? [];
 
-        $cvsList = Cv::with(['poste:id,titre', 'entreprise:id,nom', 'resultatAnalyse'])
-            ->where('entreprise_id', $eid)
+        $cvsList = $this->queryCvsRh($request)
+            ->with(['poste:id,titre', 'resultatAnalyse'])
             ->whereIn('id', $cvIds)
-            ->where('statut', StatutCv::EnCoursAnalyse)
             ->get()
             ->sortByDesc(fn (Cv $cv) => $cv->resultatAnalyse?->nombre_matches ?? 0)
             ->values()
-            ->map(fn (Cv $cv) => $cv->pourRh(
-                $decisions[$cv->id] ?? null,
-                avecEntreprise: true
-            ))
+            ->map(fn (Cv $cv) => $cv->pourRh($decisions[$cv->id] ?? null, lotProvisoire: true))
             ->all();
 
         $nbDecisions = count(array_filter($decisions));
@@ -278,7 +300,7 @@ class DashboardController extends Controller
             'zipUrl' => route('rh.cvs.zip'),
             'modeAnalyse' => $data['mode'] ?? 'standard',
             'nbDecisions' => $nbDecisions,
-            'postes' => Poste::where('entreprise_id', $eid)
+            'postes' => $this->queryPostesRh($request)
                 ->orderBy('titre')
                 ->get(['id', 'titre']),
         ]);
@@ -293,12 +315,12 @@ class DashboardController extends Controller
         ])->take(10)->values()->all();
     }
 
-    private function cvsEligiblesAnalyse(int $entrepriseId, ?int $posteId, bool $nonValidesUniquement)
+    private function cvsEligiblesAnalyse(Request $request, ?int $posteId, bool $nonValidesUniquement)
     {
         $limiteNonValide = now()->subDays(30);
 
-        $query = Cv::with(['poste', 'entreprise'])
-            ->where('entreprise_id', $entrepriseId)
+        $query = $this->queryCvsRh($request)
+            ->with('poste')
             ->when($posteId, fn ($q) => $q->where('poste_id', $posteId));
 
         if ($nonValidesUniquement) {
@@ -323,7 +345,7 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function annulerAnalyseProvisoire(Request $request, int $entrepriseId): void
+    private function annulerAnalyseProvisoire(Request $request): void
     {
         $data = $this->sessionAnalyse($request);
         if (! $data || empty($data['cv_ids'])) {
@@ -334,18 +356,15 @@ class DashboardController extends Controller
 
         $statutsInitiaux = $data['statuts_initiaux'] ?? [];
 
-        Cv::where('entreprise_id', $entrepriseId)
+        $this->queryCvsRh($request)
             ->whereIn('id', $data['cv_ids'])
-            ->where('statut', StatutCv::EnCoursAnalyse)
             ->get()
             ->each(function (Cv $cv) use ($statutsInitiaux) {
                 $cv->resultatAnalyse()?->delete();
                 $initial = StatutCv::tryFrom($statutsInitiaux[$cv->id] ?? '');
-                $cv->update([
-                    'statut' => $initial && $initial !== StatutCv::EnCoursAnalyse
-                        ? $initial
-                        : StatutCv::CvRecu,
-                ]);
+                if ($initial && $cv->statut !== $initial) {
+                    $cv->update(['statut' => $initial]);
+                }
             });
 
         $this->oublierSessionAnalyse($request);
@@ -354,14 +373,10 @@ class DashboardController extends Controller
     private function enregistrerMotsCles(Request $request, array $mots, ?int $posteId): void
     {
         $rhId = $request->user()->id;
-        $eid = $this->entrepriseId($request);
 
         $posteIds = [];
-        if ($posteId) {
-            $poste = Poste::where('id', $posteId)->where('entreprise_id', $eid)->first();
-            if ($poste) {
-                $posteIds = [$poste->id];
-            }
+        if ($posteId && $this->posteAppartientAuRh($request, $posteId)) {
+            $posteIds = [$posteId];
         }
 
         foreach ($mots as $valeur) {

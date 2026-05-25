@@ -20,6 +20,19 @@ const form = useForm({
     inclure_non_valides: false,
 });
 
+const annulerForm = useForm({});
+
+function annulerAnalyseEnCours() {
+    if (
+        !confirm(
+            "Effacer l'analyse en cours ? Aucun statut ni e-mail ne sera modifié."
+        )
+    ) {
+        return;
+    }
+    annulerForm.post("/rh/filtrer/annuler");
+}
+
 function ajouterMot() {
     const mot = inputMot.value.trim().toLowerCase();
     if (mot && !motsCles.value.includes(mot)) {
@@ -92,6 +105,15 @@ function lancerFiltrage() {
                 >
                     Reprendre les résultats
                 </Link>
+                <button
+                    type="button"
+                    class="btn btn--ghost btn--sm btn--danger"
+                    style="margin-left: 0.35rem"
+                    :disabled="annulerForm.processing"
+                    @click="annulerAnalyseEnCours"
+                >
+                    Effacer l'analyse
+                </button>
             </div>
 
             <div class="keywords-bar">

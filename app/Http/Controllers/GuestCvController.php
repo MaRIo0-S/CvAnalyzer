@@ -135,6 +135,10 @@ class GuestCvController extends Controller
 
     public function update(Request $request, Cv $cv)
     {
+        if ($cv->statut !== StatutCv::CvRecu) {
+            return back()->withErrors(['depot' => 'Ce dossier ne peut plus être modifié (analyse ou décision déjà en cours).']);
+        }
+
         if (! $cv->peutModifier()) {
             return back()->withErrors(['depot' => 'La période de modification (24 h) est terminée.']);
         }

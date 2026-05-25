@@ -23,26 +23,17 @@ class CvController extends Controller
     use GereSessionAnalyseRh;
     use ResolvesRhEntreprise;
 
-    private function authorizeCv(Request $request, Cv $cv): void
-    {
-        if ($cv->entreprise_id !== $this->entrepriseId($request)) {
-            abort(403);
-        }
-    }
-
     public function index(Request $request)
     {
-        $eid = $this->entrepriseId($request);
-
-        $cvs = Cv::with(['poste:id,titre', 'resultatAnalyse'])
-            ->where('entreprise_id', $eid)
+        $cvs = $this->queryCvsRh($request)
+            ->with(['poste:id,titre', 'resultatAnalyse'])
             ->orderByDesc('date_depot')
             ->get()
             ->map(fn (Cv $cv) => $cv->pourRh());
 
         return Inertia::render('Rh/CvsListe', [
             'cvs' => $cvs,
-            'postes' => Poste::where('entreprise_id', $eid)
+            'postes' => $this->queryPostesRh($request)
                 ->orderBy('titre')
                 ->get(['id', 'titre']),
             'entreprise' => $request->user()->entreprise?->nom,
@@ -52,13 +43,7 @@ class CvController extends Controller
 
     public function valider(Request $request, Cv $cv)
     {
-        $this->authorizeCv($request, $cv);
-
-        if ($cv->statut !== StatutCv::EnCoursAnalyse) {
-            return back()->withErrors([
-                'decision' => 'Seules les candidatures en cours d\'analyse peuvent être validées ou refusées.',
-            ]);
-        }
+        $this->authorizeCvDuRh($request, $cv);
 
         $validated = $request->validate([
             'valide' => ['required', 'boolean'],
@@ -82,6 +67,12 @@ class CvController extends Controller
             );
         }
 
+        if ($cv->statut !== StatutCv::EnCoursAnalyse) {
+            return back()->withErrors([
+                'decision' => 'Seules les candidatures en cours d\'analyse peuvent être validées ou refusées.',
+            ]);
+        }
+
         $statut = $validated['valide'] ? StatutCv::Valide : StatutCv::NonValide;
         $ancienStatut = $cv->statut;
         $cv->update(['statut' => $statut]);
@@ -94,24 +85,47 @@ class CvController extends Controller
         );
     }
 
+    public function annulerDecisionProvisoire(Request $request, Cv $cv): RedirectResponse
+    {
+        $this->authorizeCvDuRh($request, $cv);
+
+        if (! $this->cvDansLotAnalyse($request, $cv->id)) {
+            return back()->withErrors([
+                'decision' => 'Ce CV ne fait pas partie de l\'analyse en cours.',
+            ]);
+        }
+
+        if (! $this->decisionProvisoire($request, $cv->id)) {
+            return back()->withErrors([
+                'decision' => 'Aucune décision provisoire à retirer pour ce CV.',
+            ]);
+        }
+
+        $this->retirerDecisionProvisoire($request, $cv->id);
+
+        return back()->with(
+            'success',
+            'Décision provisoire retirée. Le CV est de nouveau en cours d\'analyse dans ce lot.'
+        );
+    }
+
     public function telechargerZip(Request $request): BinaryFileResponse|RedirectResponse
     {
-        $eid = $this->entrepriseId($request);
+        $rhId = $this->rhUserId($request);
 
         $validated = $request->validate([
             'poste_id' => [
                 'nullable',
-                Rule::exists('postes', 'id')->where(fn ($q) => $q->where('entreprise_id', $eid)),
+                Rule::exists('postes', 'id')->where(
+                    fn ($q) => $q->where('user_id', $rhId)
+                ),
             ],
             'statut' => ['nullable', Rule::in(array_column(StatutCv::cases(), 'value'))],
             'cv_ids' => ['nullable', 'array', 'min:1'],
-            'cv_ids.*' => [
-                'integer',
-                Rule::exists('cvs', 'id')->where(fn ($q) => $q->where('entreprise_id', $eid)),
-            ],
+            'cv_ids.*' => ['integer'],
         ]);
 
-        $query = Cv::where('entreprise_id', $eid);
+        $query = $this->queryCvsRh($request);
 
         if (! empty($validated['cv_ids'])) {
             $query->whereIn('id', $validated['cv_ids']);
@@ -189,20 +203,24 @@ class CvController extends Controller
 
     public function show(Request $request, Cv $cv)
     {
-        $this->authorizeCv($request, $cv);
+        $this->authorizeCvDuRh($request, $cv);
         $cv->load(['poste', 'entreprise', 'resultatAnalyse']);
 
         $depuisAnalyse = $request->query('depuis') === 'analyse';
-        $decision = $depuisAnalyse ? $this->decisionProvisoire($request, $cv->id) : null;
+        $lotProvisoire = $depuisAnalyse && $this->cvDansLotAnalyse($request, $cv->id);
+        $decision = $lotProvisoire ? $this->decisionProvisoire($request, $cv->id) : null;
+        $affichage = $cv->statutPourAffichageRh($decision, $lotProvisoire);
+        $analyse = $cv->donneesAnalyseAffichage($lotProvisoire);
 
         return Inertia::render('Rh/CvConsulter', [
+            'depuisAnalyse' => $depuisAnalyse,
             'retourUrl' => $depuisAnalyse
                 ? route('rh.filtrer.resultats')
                 : route('rh.cvs.liste'),
             'retourLabel' => $depuisAnalyse
                 ? "Retour aux résultats d'analyse"
                 : 'Retour à la liste des CV',
-            'lotEnAttente' => $depuisAnalyse && $this->cvDansLotAnalyse($request, $cv->id),
+            'lotEnAttente' => $lotProvisoire,
             'cv' => [
                 'id' => $cv->id,
                 'nom_candidat' => $cv->nom_candidat ?: 'Candidat #'.$cv->id,
@@ -210,13 +228,15 @@ class CvController extends Controller
                 'poste' => $cv->poste?->titre,
                 'entreprise' => $cv->entreprise?->nom,
                 'statut' => $cv->statut->value,
-                'statut_label' => Cv::libelleAvecDecision($decision, $cv->statut->label()),
+                'statut_affichage' => $affichage['statut_affichage'],
+                'statut_label' => $affichage['statut_label'],
+                'decision_provisoire' => $decision,
                 'date_depot' => $cv->date_depot?->format('d/m/Y à H:i'),
                 'format_fichier' => strtoupper($cv->format_fichier),
                 'taille_fichier' => $cv->taille_fichier,
                 'texte_extrait' => $cv->texte_extrait,
-                'score' => $cv->donneesAnalyseAffichage()['score'],
-                'mots_cles_matches' => $cv->statut === StatutCv::CvRecu
+                'score' => $analyse['score'],
+                'mots_cles_matches' => ($cv->statut === StatutCv::CvRecu && ! $lotProvisoire)
                     ? []
                     : ($cv->resultatAnalyse?->mots_cles_matches ?? []),
                 'fichier_preview' => strtolower($cv->format_fichier) === 'pdf',
@@ -228,7 +248,7 @@ class CvController extends Controller
 
     public function fichier(Request $request, Cv $cv): \Symfony\Component\HttpFoundation\Response
     {
-        $this->authorizeCv($request, $cv);
+        $this->authorizeCvDuRh($request, $cv);
 
         if (! Storage::disk('public')->exists($cv->fichier_url)) {
             abort(404, 'Fichier CV introuvable.');
@@ -250,7 +270,7 @@ class CvController extends Controller
 
     public function telecharger(Request $request, Cv $cv): StreamedResponse
     {
-        $this->authorizeCv($request, $cv);
+        $this->authorizeCvDuRh($request, $cv);
 
         if (! Storage::disk('public')->exists($cv->fichier_url)) {
             abort(404, 'Fichier CV introuvable.');

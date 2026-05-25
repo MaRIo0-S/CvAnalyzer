@@ -33,17 +33,6 @@ function submit() {
             <h2 class="card__title card__title--sm">Informations personnelles</h2>
 
             <form @submit.prevent="submit">
-                <div
-                    v-if="Object.keys(form.errors).length"
-                    class="alert alert--error"
-                >
-                    <ul style="margin: 0; padding-left: 1.2rem">
-                        <li v-for="(msg, key) in form.errors" :key="key">
-                            {{ msg }}
-                        </li>
-                    </ul>
-                </div>
-
                 <div v-if="profil.entreprise" class="form-group">
                     <label>Entreprise (lecture seule)</label>
                     <input

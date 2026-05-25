@@ -24,6 +24,18 @@ function close() {
     open.value = false;
 }
 
+function marquerCommeLus() {
+    router.post(
+        "/candidat/notifications/tout-lu",
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            only: ["candidatNotifications"],
+        }
+    );
+}
+
 function toggle() {
     if (open.value) {
         close();
@@ -32,7 +44,7 @@ function toggle() {
     placePanel();
     open.value = true;
     if (unread.value > 0) {
-        router.post("/candidat/notifications/tout-lu", {}, { preserveScroll: true });
+        marquerCommeLus();
     }
 }
 

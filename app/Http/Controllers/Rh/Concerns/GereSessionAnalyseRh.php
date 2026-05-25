@@ -50,6 +50,19 @@ trait GereSessionAnalyseRh
         $request->session()->put(self::SESSION_ANALYSE, $data);
     }
 
+    protected function retirerDecisionProvisoire(Request $request, int $cvId): void
+    {
+        $data = $this->sessionAnalyse($request);
+        if (! $data) {
+            return;
+        }
+
+        $decisions = $data['decisions'] ?? [];
+        unset($decisions[$cvId]);
+        $data['decisions'] = $decisions;
+        $request->session()->put(self::SESSION_ANALYSE, $data);
+    }
+
     protected function oublierSessionAnalyse(Request $request): void
     {
         $request->session()->forget(self::SESSION_ANALYSE);

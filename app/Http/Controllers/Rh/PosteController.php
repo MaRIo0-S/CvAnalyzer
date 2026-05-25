@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rh;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Cv;
 use App\Models\Poste;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Inertia\Inertia;
 
 class PosteController extends Controller
 {
+    use Concerns\ResolvesRhEntreprise;
+
     public function index(Request $request)
     {
         $entrepriseId = $request->user()->entreprise_id;
@@ -18,8 +21,7 @@ class PosteController extends Controller
         $entreprise = $request->user()->entreprise?->load('descriptionUpdatedBy:id,name');
 
         return Inertia::render('Rh/Postes', [
-            'postes' => Poste::where('entreprise_id', $entrepriseId)
-                ->where('user_id', $request->user()->id)
+            'postes' => $this->queryPostesRh($request)
                 ->orderBy('created_at', 'desc')
                 ->get(['id', 'titre', 'description', 'est_ouvert', 'created_at']),
             'entreprise' => $entreprise ? [
@@ -105,6 +107,13 @@ class PosteController extends Controller
         if ($poste->user_id !== $request->user()->id
             || $poste->entreprise_id !== $request->user()->entreprise_id) {
             abort(403);
+        }
+
+        $nbCvs = Cv::where('poste_id', $poste->id)->count();
+        if ($nbCvs > 0) {
+            return back()->withErrors([
+                'poste' => "Impossible de supprimer ce poste : {$nbCvs} CV y sont encore rattachés. Fermez le poste aux candidatures plutôt que de le supprimer.",
+            ]);
         }
 
         $poste->delete();

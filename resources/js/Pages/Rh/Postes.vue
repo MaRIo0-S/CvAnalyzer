@@ -43,6 +43,10 @@ function savePoste(poste) {
 function toggleOuvert(poste) {
     router.patch(`/rh/postes/${poste.id}/ouvert`, {}, { preserveScroll: true });
 }
+
+function supprimerPoste(poste) {
+    router.delete(`/rh/postes/${poste.id}`, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -82,12 +86,6 @@ function toggleOuvert(poste) {
                 </p>
             </div>
             <form @submit.prevent="entrepriseForm.put('/rh/entreprise')">
-                <div
-                    v-if="entrepriseForm.errors.description"
-                    class="alert alert--error"
-                >
-                    {{ entrepriseForm.errors.description }}
-                </div>
                 <div class="form-group">
                     <label>Description de l'entreprise</label>
                     <textarea
@@ -109,16 +107,6 @@ function toggleOuvert(poste) {
         <div class="card">
             <h2 class="card__title card__title--sm">Nouveau poste</h2>
             <form @submit.prevent="form.post('/rh/postes')">
-                <div
-                    v-if="Object.keys(form.errors).length"
-                    class="alert alert--error"
-                >
-                    <ul style="margin: 0; padding-left: 1.2rem">
-                        <li v-for="(msg, key) in form.errors" :key="key">
-                            {{ msg }}
-                        </li>
-                    </ul>
-                </div>
                 <div class="form-group">
                     <label>Titre</label>
                     <input v-model="form.titre" type="text" required />
@@ -183,7 +171,7 @@ function toggleOuvert(poste) {
                         <button
                             type="button"
                             class="btn btn--danger btn--sm"
-                            @click="$inertia.delete(`/rh/postes/${p.id}`)"
+                            @click="supprimerPoste(p)"
                         >
                             Supprimer
                         </button>

@@ -38,16 +38,6 @@ const form = useForm({
                     })
                 "
             >
-                <div
-                    v-if="Object.keys(form.errors).length"
-                    class="alert alert--error"
-                >
-                    <ul style="margin: 0; padding-left: 1.2rem">
-                        <li v-for="(msg, key) in form.errors" :key="key">
-                            {{ msg }}
-                        </li>
-                    </ul>
-                </div>
                 <div class="form-group">
                     <label>Nom</label>
                     <input v-model="form.name" type="text" required />

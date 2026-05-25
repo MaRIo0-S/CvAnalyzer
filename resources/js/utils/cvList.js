@@ -51,7 +51,10 @@ export function trierCvs(a, b, tri, { nullSafeScores = false } = {}) {
     return (b.date_depot_ts || 0) - (a.date_depot_ts || 0);
 }
 
-export function filtrerCvs(list, { recherche, filtrePoste, filtreStatut, filtreMotCle }) {
+export function filtrerCvs(
+    list,
+    { recherche, filtrePoste, filtreStatut, filtreMotCle, filtreModification }
+) {
     let out = list || [];
     const q = (recherche || "").trim().toLowerCase();
     if (q) {
@@ -68,6 +71,11 @@ export function filtrerCvs(list, { recherche, filtrePoste, filtreStatut, filtreM
         out = out.filter(
             (cv) => (cv.statut_affichage || cv.statut) === filtreStatut
         );
+    }
+    if (filtreModification === "encore_modifiable") {
+        out = out.filter((cv) => cv.modifiable_par_candidat === true);
+    } else if (filtreModification === "pret_premiere_analyse") {
+        out = out.filter((cv) => cv.pret_premiere_analyse === true);
     }
     const mot = (filtreMotCle || "").trim().toLowerCase();
     if (mot) {

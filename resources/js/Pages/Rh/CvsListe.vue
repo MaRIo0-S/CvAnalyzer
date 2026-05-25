@@ -4,7 +4,7 @@ import { computed, ref, watch } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { useCvDecision } from "@/composables/useCvDecision";
 import { useToastStore } from "@/stores/toast";
-import { badgeClass, filtrerCvs, trierCvs } from "@/utils/cvList";
+import { badgeClassFromCv, filtrerCvs, trierCvs } from "@/utils/cvList";
 
 const props = defineProps({
     cvs: Array,
@@ -17,14 +17,26 @@ const recherche = ref("");
 const filtreMotCle = ref("");
 const filtrePoste = ref("");
 const filtreStatut = ref("");
+const filtreModification = ref("");
 const tri = ref("date_depot_desc");
 const selectedIds = ref([]);
 const toast = useToastStore();
 const { peutDecider, valider, refuser } = useCvDecision();
 
-const triAnalyseDisponible = computed(
-    () => filtreStatut.value !== "cv_recu"
-);
+const triAnalyseDisponible = computed(() => filtreStatut.value !== "cv_recu");
+
+const toolbarHint = computed(() => {
+    if (filtreModification.value === "encore_modifiable") {
+        return "Filtre : CV reçus encore modifiables par le candidat (< 24 h).";
+    }
+    if (filtreModification.value === "pret_premiere_analyse") {
+        return "Filtre : CV reçus dont les 24 h sont terminées — prêts pour la première analyse RH.";
+    }
+    if (!triAnalyseDisponible.value) {
+        return "Tri par score ou mots-clés : choisissez un autre statut que « CV reçu » seul.";
+    }
+    return "";
+});
 
 watch(filtreStatut, (statut) => {
     if (
@@ -40,7 +52,7 @@ watch(filtreStatut, (statut) => {
     }
 });
 
-watch([filtrePoste, filtreStatut, filtreMotCle], () => {
+watch([filtrePoste, filtreStatut, filtreMotCle, filtreModification], () => {
     selectedIds.value = [];
 });
 
@@ -50,6 +62,7 @@ const cvsFiltres = computed(() => {
         filtrePoste: filtrePoste.value,
         filtreStatut: filtreStatut.value,
         filtreMotCle: filtreMotCle.value,
+        filtreModification: filtreModification.value,
     });
     return [...list].sort((a, b) =>
         trierCvs(a, b, tri.value, { nullSafeScores: true })
@@ -79,18 +92,12 @@ function toggleSelectAll() {
 }
 
 function telechargerZip(ids) {
-    const params = new URLSearchParams();
-    if (ids && ids.length) {
-        ids.forEach((id) => params.append("cv_ids[]", String(id)));
-    } else if (filtrePoste.value) {
-        params.set("poste_id", String(filtrePoste.value));
-        if (filtreStatut.value) {
-            params.set("statut", filtreStatut.value);
-        }
-    } else {
-        toast.error("Cochez des CV ou choisissez un poste.");
+    if (!ids?.length) {
+        toast.error("Cochez au moins un CV (ou « Tout sélectionner »).");
         return;
     }
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("cv_ids[]", String(id)));
     window.location.href = `${props.zipUrl}?${params.toString()}`;
 }
 </script>
@@ -107,8 +114,10 @@ function telechargerZip(ids) {
 
         <div class="card cvs-liste-toolbar cvs-liste-toolbar--wide">
             <h2 class="card__title card__title--sm">Filtres et tri</h2>
-            <div class="cvs-liste-toolbar__grid cvs-liste-toolbar__grid--one-row">
-                <div class="form-group">
+            <div
+                class="cvs-liste-toolbar__grid cvs-liste-toolbar__grid--filters"
+            >
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Rechercher</label>
                     <input
                         v-model="recherche"
@@ -116,7 +125,7 @@ function telechargerZip(ids) {
                         placeholder="Nom ou e-mail…"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group cvs-liste-toolbar__field">
                     <label
                         title="Filtre les CV dont l'analyse contient ce mot-clé (hors statut « CV reçu » seul)"
                     >
@@ -129,7 +138,7 @@ function telechargerZip(ids) {
                         :disabled="filtreStatut === 'cv_recu'"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Poste</label>
                     <select v-model="filtrePoste">
                         <option value="">— Tous les postes —</option>
@@ -142,7 +151,7 @@ function telechargerZip(ids) {
                         </option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Statut</label>
                     <select v-model="filtreStatut">
                         <option value="">— Tous —</option>
@@ -154,16 +163,36 @@ function telechargerZip(ids) {
                         <option value="non_valide">Non validé</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group cvs-liste-toolbar__field">
+                    <label title="Période de modification 24 h après le dépôt">
+                        Période 24 h
+                    </label>
+                    <select
+                        v-model="filtreModification"
+                        class="cvs-liste-toolbar__select--wide"
+                    >
+                        <option value="">— Tous —</option>
+                        <option value="encore_modifiable">
+                            Encore modifiable
+                        </option>
+                        <option value="pret_premiere_analyse">
+                            Prêt pour analyse
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group cvs-liste-toolbar__field">
                     <label>Trier par</label>
-                    <select v-model="tri">
+                    <select
+                        v-model="tri"
+                        class="cvs-liste-toolbar__select--wide"
+                    >
                         <option value="date_depot_desc">
                             Date de dépôt (récent)
                         </option>
                         <option value="date_depot_asc">
                             Date de dépôt (ancien)
                         </option>
-                        <option value="statut">Statut (A → Z)</option>
+                        <option value="statut">Statut</option>
                         <option
                             value="score_desc"
                             :disabled="!triAnalyseDisponible"
@@ -201,12 +230,11 @@ function telechargerZip(ids) {
                             Date d'analyse (ancien)
                         </option>
                     </select>
-                    <small v-if="!triAnalyseDisponible" class="text-muted">
-                        Tri score / mots-clés : changez le filtre statut (pas
-                        « CV reçu » seul).
-                    </small>
                 </div>
             </div>
+            <p v-if="toolbarHint" class="cvs-liste-toolbar__hints text-muted">
+                {{ toolbarHint }}
+            </p>
             <div class="cvs-liste-toolbar__actions">
                 <label class="cvs-liste-select-all">
                     <input
@@ -223,14 +251,6 @@ function telechargerZip(ids) {
                     @click="telechargerZip(selectedIds)"
                 >
                     ZIP — {{ selectedIds.length }} sélectionné(s)
-                </button>
-                <button
-                    type="button"
-                    class="btn btn--secondary"
-                    :disabled="!filtrePoste"
-                    @click="telechargerZip()"
-                >
-                    ZIP — tout le poste filtré
                 </button>
                 <span class="text-muted">
                     {{ cvsFiltres.length }} CV affiché(s)
@@ -268,7 +288,7 @@ function telechargerZip(ids) {
                                 {{ cv.email_candidat || "—" }}
                             </p>
                         </div>
-                        <span :class="['badge', badgeClass(cv.statut)]">
+                        <span :class="['badge', badgeClassFromCv(cv)]">
                             {{ cv.statut_label }}
                         </span>
                     </div>
@@ -276,7 +296,7 @@ function telechargerZip(ids) {
                     <dl class="cvs-row__meta">
                         <div class="cvs-row__meta-item">
                             <dt>Poste</dt>
-                            <dd>{{ cv.poste }}</dd>
+                            <dd>{{ cv.poste || "—" }}</dd>
                         </div>
                         <div class="cvs-row__meta-item">
                             <dt>Dépôt</dt>
@@ -316,8 +336,12 @@ function telechargerZip(ids) {
                             <dd>{{ cv.format_fichier?.toUpperCase() }}</dd>
                         </div>
                     </dl>
-                    <p v-if="!cv.peut_analyser" class="cvs-row__hint text-muted">
-                        Période de modification 24 h encore active
+                    <p
+                        v-if="cv.modifiable_par_candidat"
+                        class="cvs-row__hint text-muted"
+                    >
+                        Encore modifiable par le candidat (statut « CV reçu »,
+                        moins de 24 h)
                     </p>
                 </div>
 

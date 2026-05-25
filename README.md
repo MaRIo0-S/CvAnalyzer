@@ -17,3 +17,7 @@ php artisan serve
 ```
 
 Comptes de démonstration : voir `database/seeders/DemoDataSeeder.php` (mot de passe `password`).
+
+## Apprendre le code (local)
+
+Guide complet pour comprendre et réécrire le projet : **`docs/apprendre/README.md`** (parcours, syntaxe, chaque fichier, exercices).

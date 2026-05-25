@@ -71,11 +71,12 @@ class ServiceAnalyse
     {
         $ancienStatut = $cv->statut;
 
-        if ($ancienStatut !== StatutCv::EnCoursAnalyse) {
-            $cv->update(['statut' => StatutCv::EnCoursAnalyse]);
-            if ($notifier) {
-                StatutCandidatureMail::envoyerSiChange($cv, $ancienStatut, StatutCv::EnCoursAnalyse);
-            }
+        if ($notifier && $ancienStatut !== StatutCv::EnCoursAnalyse) {
+            $cv->update([
+                'statut' => StatutCv::EnCoursAnalyse,
+                'modifiable_jusqu' => now(),
+            ]);
+            StatutCandidatureMail::envoyerSiChange($cv, $ancienStatut, StatutCv::EnCoursAnalyse);
         }
 
         $texte = trim($this->extraireTexte($cv));

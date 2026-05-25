@@ -40,16 +40,6 @@ function submit() {
 
         <div class="card auth-card" style="max-width: 480px">
             <form @submit.prevent="submit">
-                <div
-                    v-if="Object.keys(form.errors).length"
-                    class="alert alert--error"
-                >
-                    <ul style="margin: 0; padding-left: 1.2rem">
-                        <li v-for="(msg, key) in form.errors" :key="key">
-                            {{ msg }}
-                        </li>
-                    </ul>
-                </div>
                 <PasswordInput
                     v-model="form.current_password"
                     label="Mot de passe actuel"

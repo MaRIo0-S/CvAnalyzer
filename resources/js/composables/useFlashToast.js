@@ -18,8 +18,10 @@ export function useFlashToast() {
 
     function consumeErrors() {
         const errors = page.props.errors || {};
+        const seen = new Set();
         Object.values(errors).forEach((msg) => {
-            if (typeof msg === "string" && msg) {
+            if (typeof msg === "string" && msg && !seen.has(msg)) {
+                seen.add(msg);
                 toast.error(msg, 6500);
             }
         });

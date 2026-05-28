@@ -3,7 +3,13 @@ import { createInertiaApp } from "@inertiajs/vue3";
 import { createPinia } from "pinia";
 
 createInertiaApp({
-    progress: { popover: false },
+    progress: {
+        delay: 80,
+        color: "#22d3ee",
+        includeCSS: true,
+        showSpinner: false,
+        popover: false,
+    },
     resolve: (name) => {
         const pages = import.meta.glob("./Pages/**/*.vue", { eager: true });
         return pages[`./Pages/${name}.vue`];

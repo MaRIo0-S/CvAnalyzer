@@ -16,6 +16,7 @@ use App\Http\Controllers\Rh\PosteController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::post('/contact', [HomeController::class, 'contact'])->name('home.contact');
 
 Route::middleware('no.staff.depot')->group(function () {
     Route::get('/deposer', [GuestCvController::class, 'create'])->name('guest.deposer');

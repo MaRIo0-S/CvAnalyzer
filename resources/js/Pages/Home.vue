@@ -1,11 +1,51 @@
 <script setup>
-import { Link, usePage } from "@inertiajs/vue3";
-import { computed } from "vue";
+import { Link, useForm, usePage } from "@inertiajs/vue3";
+import { computed, ref } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import SiteLogo from "@/Components/SiteLogo.vue";
 
+const props = defineProps({
+    landingStats: { type: Array, default: () => [] },
+});
+
 const page = usePage();
 const isGuest = computed(() => !page.props.auth?.user);
+
+const contactForm = useForm({
+    nom: "",
+    email: "",
+    entreprise: "",
+    message: "",
+});
+
+function submitContact() {
+    contactForm.post("/contact", {
+        preserveScroll: true,
+        onSuccess: () => {
+            contactForm.reset();
+            const el = document.getElementById("contact");
+            el?.scrollIntoView({ behavior: "smooth", block: "start" });
+        },
+    });
+}
+
+const rhBenefits = [
+    {
+        icon: "keywords",
+        title: "Analyse par mots-clés",
+        text: "Filtrez et classez les CV en quelques secondes selon les compétences recherchées.",
+    },
+    {
+        icon: "chart",
+        title: "Vue d'ensemble",
+        text: "Tableau de bord, statuts clairs et historique des décisions pour toute l'équipe RH.",
+    },
+    {
+        icon: "mail",
+        title: "Candidats informés",
+        text: "Notifications automatiques à chaque changement de statut — moins de relances manuelles.",
+    },
+];
 
 const valueProps = [
     {
@@ -52,7 +92,7 @@ const steps = [
     },
 ];
 
-const faqItems = [
+const faqCandidat = [
     {
         q: "Faut-il créer un compte pour postuler ?",
         a: "Non. Vous pouvez déposer sans inscription. Un compte vous permet en plus de suivre votre statut et de recevoir des notifications par e-mail.",
@@ -74,6 +114,40 @@ const faqItems = [
         a: "Votre dossier est bien enregistré. Le recruteur dispose de vos coordonnées pour vous recontacter en cas de suite favorable.",
     },
 ];
+
+const faqRh = [
+    {
+        q: "Comment accéder à l'espace recrutement ?",
+        a: "Votre administrateur crée un compte RH. Après connexion, vous accédez au tableau de bord, à la liste des CV et à l'analyse par mots-clés pour vos postes.",
+    },
+    {
+        q: "Chaque recruteur voit-il tous les CV de l'entreprise ?",
+        a: "Non. Chaque responsable RH ne consulte que les CV rattachés à ses propres postes, pour un périmètre clair et confidentiel.",
+    },
+    {
+        q: "Comment fonctionne l'analyse par mots-clés ?",
+        a: "Vous saisissez des mots-clés (compétences, outils…). La plateforme extrait le texte des CV et calcule un score de correspondance. Vous validez ou refusez, puis confirmez le lot pour appliquer les statuts.",
+    },
+    {
+        q: "Les candidats sont-ils notifiés pendant l'analyse ?",
+        a: "Les statuts et e-mails ne sont envoyés qu'après confirmation de l'analyse. Avant cela, le candidat conserve le statut affiché précédemment.",
+    },
+    {
+        q: "Puis-je annuler une analyse lancée par erreur ?",
+        a: "Oui. Tant que vous n'avez pas confirmé, vous pouvez effacer l'analyse : les scores provisoires sont supprimés sans modifier les dossiers ni envoyer d'e-mails.",
+    },
+];
+
+const openFaqCandidat = ref(null);
+const openFaqRh = ref(null);
+
+function toggleFaqCandidat(index) {
+    openFaqCandidat.value = openFaqCandidat.value === index ? null : index;
+}
+
+function toggleFaqRh(index) {
+    openFaqRh.value = openFaqRh.value === index ? null : index;
+}
 </script>
 
 <template>
@@ -337,22 +411,271 @@ const faqItems = [
                 </div>
             </section>
 
-            <section class="landing-section landing-section--muted">
+            <section
+                id="faq-candidat"
+                class="landing-section landing-section--muted"
+            >
                 <div class="landing-inner landing-inner--narrow">
                     <div class="section-header">
-                        <p class="section-label">FAQ</p>
+                        <p class="section-label">FAQ candidats</p>
                         <h2 class="section-title">Questions fréquentes</h2>
+                        <p class="section-subtitle">
+                            Tout ce qu'il faut savoir avant de déposer votre CV.
+                        </p>
                     </div>
                     <div class="faq-list">
-                        <details
-                            v-for="(item, i) in faqItems"
-                            :key="i"
+                        <div
+                            v-for="(item, i) in faqCandidat"
+                            :key="`c-${i}`"
                             class="faq-item"
+                            :class="{
+                                'faq-item--open': openFaqCandidat === i,
+                            }"
                         >
-                            <summary>{{ item.q }}</summary>
-                            <p>{{ item.a }}</p>
-                        </details>
+                            <button
+                                type="button"
+                                class="faq-item__trigger"
+                                :aria-expanded="openFaqCandidat === i"
+                                @click="toggleFaqCandidat(i)"
+                            >
+                                <span class="faq-item__question">{{
+                                    item.q
+                                }}</span>
+                                <span
+                                    class="faq-item__icon"
+                                    aria-hidden="true"
+                                />
+                            </button>
+                            <div
+                                class="faq-item__collapse"
+                                :class="{
+                                    'faq-item__collapse--open':
+                                        openFaqCandidat === i,
+                                }"
+                            >
+                                <div class="faq-item__panel">
+                                    <p>{{ item.a }}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </section>
+
+            <section
+                id="entreprises"
+                class="landing-section landing-section--enterprise"
+            >
+                <div class="landing-inner">
+                    <div class="section-header">
+                        <p class="section-label">Espace recrutement</p>
+                        <h2 class="section-title">
+                            Vous recrutez ? Centralisez vos CV
+                        </h2>
+                        <p class="section-subtitle">
+                            CV Analyzer aide les équipes RH à gagner du temps
+                            sur le tri des candidatures, avec un parcours
+                            fluide côté candidats.
+                        </p>
+                    </div>
+
+                    <div class="stats-grid landing-stats-grid">
+                        <div
+                            v-for="(stat, i) in landingStats"
+                            :key="i"
+                            class="stat-card"
+                            :class="`stat-card--${stat.tone}`"
+                        >
+                            <strong>{{ stat.value }}</strong>
+                            <span>{{ stat.label }}</span>
+                        </div>
+                    </div>
+
+                    <div class="rh-benefits">
+                        <article
+                            v-for="item in rhBenefits"
+                            :key="item.title"
+                            class="rh-benefit"
+                        >
+                            <span class="rh-benefit__icon" aria-hidden="true">
+                                <svg
+                                    v-if="item.icon === 'keywords'"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="11" cy="11" r="7" />
+                                    <path d="M20 20l-3-3" />
+                                    <path d="M8 11h6" />
+                                </svg>
+                                <svg
+                                    v-else-if="item.icon === 'chart'"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path d="M4 19V5" />
+                                    <path d="M4 19h16" />
+                                    <path d="M8 17V11" />
+                                    <path d="M12 17V7" />
+                                    <path d="M16 17v-4" />
+                                </svg>
+                                <svg
+                                    v-else-if="item.icon === 'mail'"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M4 6h16v12H4V6z"
+                                    />
+                                    <path d="M4 7l8 6 8-6" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3>{{ item.title }}</h3>
+                                <p>{{ item.text }}</p>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="landing-enterprise-cta">
+                        <a href="#contact" class="btn btn--cta">
+                            Nous contacter
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="faq-rh"
+                class="landing-section landing-section--muted"
+            >
+                <div class="landing-inner landing-inner--narrow">
+                    <div class="section-header">
+                        <p class="section-label">FAQ recrutement</p>
+                        <h2 class="section-title">Questions fréquentes RH</h2>
+                        <p class="section-subtitle">
+                            Fonctionnement de l'espace recrutement et des
+                            analyses.
+                        </p>
+                    </div>
+                    <div class="faq-list">
+                        <div
+                            v-for="(item, i) in faqRh"
+                            :key="`r-${i}`"
+                            class="faq-item"
+                            :class="{ 'faq-item--open': openFaqRh === i }"
+                        >
+                            <button
+                                type="button"
+                                class="faq-item__trigger"
+                                :aria-expanded="openFaqRh === i"
+                                @click="toggleFaqRh(i)"
+                            >
+                                <span class="faq-item__question">{{
+                                    item.q
+                                }}</span>
+                                <span
+                                    class="faq-item__icon"
+                                    aria-hidden="true"
+                                />
+                            </button>
+                            <div
+                                class="faq-item__collapse"
+                                :class="{
+                                    'faq-item__collapse--open':
+                                        openFaqRh === i,
+                                }"
+                            >
+                                <div class="faq-item__panel">
+                                    <p>{{ item.a }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="contact"
+                class="landing-section landing-section--muted landing-section--contact"
+            >
+                <div class="landing-inner landing-inner--narrow">
+                    <div class="section-header">
+                        <p class="section-label">Contact</p>
+                        <h2 class="section-title">Parlons de votre besoin</h2>
+                        <p class="section-subtitle">
+                            Une question, une démo ou un déploiement pour votre
+                            équipe ? Laissez-nous un message.
+                        </p>
+                    </div>
+
+                    <form
+                        class="landing-contact-form card"
+                        @submit.prevent="submitContact"
+                    >
+                        <div class="landing-contact-form__row">
+                            <div class="form-group">
+                                <label for="contact-nom">Nom complet</label>
+                                <input
+                                    id="contact-nom"
+                                    v-model="contactForm.nom"
+                                    type="text"
+                                    required
+                                    autocomplete="name"
+                                    placeholder="Jean Dupont"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="contact-email">E-mail</label>
+                                <input
+                                    id="contact-email"
+                                    v-model="contactForm.email"
+                                    type="email"
+                                    required
+                                    autocomplete="email"
+                                    placeholder="vous@entreprise.com"
+                                />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-entreprise"
+                                >Entreprise (optionnel)</label
+                            >
+                            <input
+                                id="contact-entreprise"
+                                v-model="contactForm.entreprise"
+                                type="text"
+                                autocomplete="organization"
+                                placeholder="Nom de votre société"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-message">Message</label>
+                            <textarea
+                                id="contact-message"
+                                v-model="contactForm.message"
+                                required
+                                rows="5"
+                                placeholder="Décrivez votre besoin (nombre de postes, volume de CV, délai…)"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            class="btn btn--primary btn--block"
+                            :disabled="contactForm.processing"
+                        >
+                            {{
+                                contactForm.processing
+                                    ? "Envoi en cours…"
+                                    : "Envoyer le message"
+                            }}
+                        </button>
+                    </form>
                 </div>
             </section>
 
@@ -385,6 +708,8 @@ const faqItems = [
                     </Link>
                     <nav class="landing-footer__links">
                         <Link href="/deposer">Déposer un CV</Link>
+                        <a href="#entreprises">Entreprises</a>
+                        <a href="#contact">Contact</a>
                         <Link href="/inscription">S'inscrire</Link>
                         <Link href="/login">Connexion</Link>
                     </nav>

@@ -53,7 +53,12 @@ html::-webkit-scrollbar-thumb:hover {
 
 body {
     margin: 0;
-    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    font-family:
+        "Segoe UI",
+        system-ui,
+        -apple-system,
+        Roboto,
+        sans-serif;
     background: $bg-body;
     color: $text;
     line-height: 1.65;
@@ -119,7 +124,8 @@ a {
     inset: 0;
     pointer-events: none;
     z-index: -1;
-    background: radial-gradient(
+    background:
+        radial-gradient(
             ellipse 70% 50% at 10% -10%,
             rgba(99, 102, 241, 0.07),
             transparent 55%
@@ -129,6 +135,27 @@ a {
             rgba(34, 211, 238, 0.05),
             transparent 50%
         );
+}
+
+// Barre de progression Inertia (sous la navbar, 60px)
+#nprogress {
+    pointer-events: none;
+    z-index: 60;
+    left: 10% !important;
+    width: 80% !important;
+}
+
+#nprogress .bar {
+    top: 60px !important;
+    width: 100% !important;
+    height: 2px !important;
+    border-radius: 0 2px 2px 0;
+    background: linear-gradient(90deg, $indigo, $cyan) !important;
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.65), 0 0 6px rgba(34, 211, 238, 0.5) !important;
 }
 
 .app-header {
@@ -180,7 +207,9 @@ a {
             color: $text-muted;
             padding: 0.375rem 0.6rem;
             border-radius: 6px;
-            transition: color 0.15s, background 0.15s;
+            transition:
+                color 0.15s,
+                background 0.15s;
 
             &:hover {
                 color: $text;
@@ -229,7 +258,10 @@ a {
     font-weight: 600;
     cursor: pointer;
     text-decoration: none !important;
-    transition: transform 0.15s, opacity 0.15s, background 0.15s,
+    transition:
+        transform 0.15s,
+        opacity 0.15s,
+        background 0.15s,
         border-color 0.15s;
     color: #fff;
     white-space: nowrap;
@@ -462,7 +494,9 @@ a {
         font-size: 0.95rem;
         background: $bg-input;
         color: $text;
-        transition: border-color 0.15s, box-shadow 0.15s;
+        transition:
+            border-color 0.15s,
+            box-shadow 0.15s;
         appearance: none;
 
         &::placeholder {
@@ -1002,7 +1036,9 @@ a {
     border: 1px solid $border-soft;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.02);
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+        border-color 0.15s,
+        background 0.15s;
 
     &:last-child {
         margin-bottom: 0;
@@ -1212,7 +1248,9 @@ a {
         font-size: 0.95rem;
         line-height: 1;
         cursor: pointer;
-        transition: background 0.15s, color 0.15s;
+        transition:
+            background 0.15s,
+            color 0.15s;
 
         &:hover {
             background: rgba(248, 113, 113, 0.4);
@@ -1476,7 +1514,6 @@ a {
         font-weight: 600;
         color: $text;
     }
-
 }
 
 .modify-panel {
@@ -1584,7 +1621,9 @@ a {
     background: $bg-input;
     cursor: pointer;
     vertical-align: middle;
-    transition: background 0.2s, border-color 0.2s;
+    transition:
+        background 0.2s,
+        border-color 0.2s;
 
     &--on {
         background: rgba(52, 211, 153, 0.25);
@@ -1601,7 +1640,9 @@ a {
         height: 1.1rem;
         border-radius: 50%;
         background: $text-muted;
-        transition: transform 0.2s, background 0.2s;
+        transition:
+            transform 0.2s,
+            background 0.2s;
     }
 
     &__label {
@@ -2115,6 +2156,106 @@ a {
     }
 }
 
+.landing-section--enterprise {
+    background: linear-gradient(
+        180deg,
+        rgba(99, 102, 241, 0.06) 0%,
+        transparent 55%
+    );
+    border-top: 1px solid $border-soft;
+    border-bottom: 1px solid $border-soft;
+}
+
+.landing-stats-grid {
+    margin-bottom: 2.5rem;
+}
+
+.rh-benefits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.rh-benefit {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.15rem 1.2rem;
+    background: $bg-card;
+    border: 1px solid $border;
+    border-radius: 12px;
+    transition:
+        border-color 0.2s ease,
+        transform 0.2s ease;
+
+    &:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        transform: translateY(-2px);
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: rgba(99, 102, 241, 0.14);
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        color: $indigo-lt;
+
+        svg {
+            width: 1.35rem;
+            height: 1.35rem;
+        }
+    }
+
+    h3 {
+        margin: 0 0 0.35rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: $text;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: $text-muted;
+        line-height: 1.55;
+    }
+}
+
+.landing-enterprise-cta {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.landing-section--contact {
+    scroll-margin-top: 5rem;
+}
+
+.landing-contact-form {
+    padding: 1.5rem 1.35rem;
+    text-align: left;
+
+    &__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 1rem;
+
+        @media (max-width: 560px) {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+    }
+
+    .form-group:last-of-type {
+        margin-bottom: 1.25rem;
+    }
+}
+
 .hero__grid {
     display: grid;
     gap: 2.5rem;
@@ -2278,45 +2419,131 @@ a {
 .faq-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.65rem;
 }
 
 .faq-item {
     background: $bg-card;
     border: 1px solid $border;
-    border-radius: 10px;
-    padding: 0 1rem;
+    border-radius: 12px;
     text-align: left;
+    overflow: hidden;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
 
-    summary {
+    &:hover {
+        border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    &--open {
+        border-color: rgba(34, 211, 238, 0.4);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    &__trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+        padding: 1rem 1.1rem;
+        border: none;
+        background: transparent;
         cursor: pointer;
-        padding: 0.85rem 0;
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: $text;
-        list-style: none;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+    }
 
-        &::-webkit-details-marker {
-            display: none;
+    &__question {
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: $text;
+        line-height: 1.4;
+    }
+
+    &__icon {
+        flex-shrink: 0;
+        width: 1.35rem;
+        height: 1.35rem;
+        border-radius: 50%;
+        border: 1px solid rgba(99, 102, 241, 0.45);
+        background: rgba(99, 102, 241, 0.12);
+        position: relative;
+        transition:
+            transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            background 0.25s ease,
+            border-color 0.25s ease;
+
+        &::before,
+        &::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 0.55rem;
+            height: 2px;
+            background: $indigo-lt;
+            border-radius: 1px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        &::before {
+            transform: translate(-50%, -50%);
         }
 
         &::after {
-            content: "+";
-            float: right;
-            color: $indigo-lt;
-            font-weight: 700;
+            transform: translate(-50%, -50%) rotate(90deg);
         }
     }
 
-    &[open] summary::after {
-        content: "−";
+    &--open &__icon {
+        transform: rotate(180deg);
+        background: rgba(34, 211, 238, 0.15);
+        border-color: rgba(34, 211, 238, 0.5);
+
+        &::after {
+            transform: translate(-50%, -50%) rotate(0deg);
+            opacity: 0;
+        }
     }
 
-    p {
-        margin: 0 0 0.85rem;
-        font-size: 0.85rem;
-        color: $text-muted;
-        line-height: 1.55;
+    &__collapse {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &--open {
+            grid-template-rows: 1fr;
+        }
+    }
+
+    &__panel {
+        overflow: hidden;
+        min-height: 0;
+        padding: 0 1.1rem;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+            opacity 0.3s ease,
+            transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            padding 0.35s ease;
+
+        p {
+            margin: 0;
+            padding-bottom: 1rem;
+            font-size: 0.88rem;
+            color: $text-muted;
+            line-height: 1.6;
+        }
+    }
+
+    &--open &__panel {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 

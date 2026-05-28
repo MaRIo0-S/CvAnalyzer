@@ -1,6 +1,6 @@
 <script setup>
-import { Link, router, usePage } from "@inertiajs/vue3";
-import { computed, onMounted, onUnmounted } from "vue";
+import { Link, usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
 import ToastContainer from "@/Components/ToastContainer.vue";
 import SiteLogo from "@/Components/SiteLogo.vue";
 import NotificationBell from "@/Components/NotificationBell.vue";
@@ -11,20 +11,6 @@ defineProps({
 });
 
 useFlashToast();
-
-function cleanupStaleOverlays() {
-    const bar = document.getElementById("nprogress");
-    if (bar) {
-        try {
-            bar.hidePopover();
-        } catch {}
-    }
-}
-
-onMounted(cleanupStaleOverlays);
-
-const removeFinishListener = router.on("finish", cleanupStaleOverlays);
-onUnmounted(() => removeFinishListener());
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);

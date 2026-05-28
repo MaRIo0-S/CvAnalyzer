@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -18,6 +20,29 @@ class HomeController extends Controller
             };
         }
 
-        return Inertia::render('Home');
+        return Inertia::render('Home', [
+            'landingStats' => [
+                ['value' => '12 400+', 'label' => 'CV reçus', 'tone' => 'cyan'],
+                ['value' => '380+', 'label' => 'Postes publiés', 'tone' => 'indigo'],
+                ['value' => '48', 'label' => 'Entreprises actives', 'tone' => 'emerald'],
+                ['value' => '96 %', 'label' => 'Satisfaction RH', 'tone' => 'indigo'],
+            ],
+        ]);
+    }
+
+    public function contact(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nom' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'max:255'],
+            'entreprise' => ['nullable', 'string', 'max:150'],
+            'message' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        Log::info('Contact landing CV Analyzer', $validated);
+
+        return redirect()
+            ->route('home')
+            ->with('success', 'Merci ! Votre message a bien été envoyé. Nous vous répondrons sous 48 h ouvrées.');
     }
 }

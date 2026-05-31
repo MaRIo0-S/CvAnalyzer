@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Cv;
 use App\Models\Entreprise;
+use App\Models\MessageContact;
 use App\Models\Poste;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -47,6 +48,8 @@ class BackOfficeController extends Controller
                 'postes_ouverts' => Poste::where('est_ouvert', true)->count(),
                 'sessions' => count($this->sessionsRhActives()),
                 'session_minutes' => (int) config('session.lifetime', 120),
+                'messages_contact' => MessageContact::count(),
+                'messages_contact_non_lus' => MessageContact::where('lu', false)->count(),
             ],
             'entreprises' => $entreprises,
             'sessions' => $this->sessionsRhActives(),

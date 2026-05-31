@@ -1,4 +1,5 @@
 <script setup>
+import { Link } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 
 defineProps({
@@ -41,7 +42,22 @@ defineProps({
                 <strong>{{ stats.sessions }}</strong>
                 <span>Sessions RH actives</span>
             </div>
+            <div class="stat-card" style="--stat-accent: #22d3ee">
+                <strong>{{ stats.messages_contact }}</strong>
+                <span>Messages contact</span>
+            </div>
+            <div class="stat-card" style="--stat-accent: #f472b6">
+                <strong>{{ stats.messages_contact_non_lus }}</strong>
+                <span>Messages non lus</span>
+            </div>
         </div>
+
+        <p class="text-muted" style="margin: -0.5rem 0 1.25rem; font-size: 0.9rem">
+            Les demandes du formulaire d'accueil sont enregistrées en base.
+            <Link href="/admin/messages-contact" class="link-inline"
+                >Voir la boîte de réception</Link
+            >.
+        </p>
 
         <div class="card" style="margin-bottom: 1.25rem">
             <h2 class="card__title card__title--sm">Entreprises et RH</h2>
@@ -70,6 +86,7 @@ defineProps({
                 {{ stats.session_minutes }} minutes = session expirée (réglage
                 Laravel <code>SESSION_LIFETIME</code>).
             </p>
+            <div class="table-responsive">
             <table class="table">
                 <thead>
                     <tr>
@@ -91,6 +108,7 @@ defineProps({
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </AppLayout>
 </template>

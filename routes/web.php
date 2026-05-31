@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\Admin\BackOfficeController;
+use App\Http\Controllers\Admin\MessageContactController;
 use App\Http\Controllers\Admin\SubAdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CandidatController;
@@ -73,6 +74,9 @@ Route::middleware(['auth', 'role:sous_admin'])->prefix('rh')->group(function () 
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/back-office', [BackOfficeController::class, 'index'])->name('admin.backoffice');
+    Route::get('/messages-contact', [MessageContactController::class, 'index'])->name('admin.messages-contact');
+    Route::patch('/messages-contact/{messageContact}/lu', [MessageContactController::class, 'marquerLu'])
+        ->name('admin.messages-contact.lu');
     Route::get('/sous-admins', [SubAdminController::class, 'index'])->name('admin.subadmins');
     Route::post('/sous-admins', [SubAdminController::class, 'store'])->name('admin.subadmins.store');
     Route::delete('/sous-admins/{user}', [SubAdminController::class, 'destroy'])->name('admin.subadmins.destroy');

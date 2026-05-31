@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Enums\StatutCv;
 use App\Models\Cv;
 use App\Models\Entreprise;
+use App\Models\MessageContact;
 use App\Models\Poste;
 use App\Models\User;
 use Database\Seeders\DemoDataSeeder;
@@ -402,6 +403,67 @@ class SiteFunctionalityTest extends TestCase
             ->assertRedirect(route('home'));
 
         $this->assertGuest();
+    }
+
+    public function test_formulaire_contact_enregistre_en_base(): void
+    {
+        $this->assertDatabaseCount('messages_contact', 0);
+
+        $this->post(route('home.contact'), [
+            'nom' => 'Marie Martin',
+            'email' => 'marie@acme.test',
+            'entreprise' => 'Acme SA',
+            'message' => 'Nous souhaitons une démo pour 15 postes.',
+        ])
+            ->assertRedirect(route('home'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('messages_contact', [
+            'nom' => 'Marie Martin',
+            'email' => 'marie@acme.test',
+            'entreprise' => 'Acme SA',
+            'lu' => false,
+        ]);
+    }
+
+    public function test_formulaire_contact_requiert_entreprise(): void
+    {
+        $this->post(route('home.contact'), [
+            'nom' => 'Test',
+            'email' => 'test@test.com',
+            'entreprise' => '',
+            'message' => 'Message assez long.',
+        ])->assertSessionHasErrors('entreprise');
+
+        $this->assertDatabaseCount('messages_contact', 0);
+    }
+
+    public function test_admin_messages_contact(): void
+    {
+        MessageContact::create([
+            'nom' => 'Client',
+            'email' => 'client@demo.test',
+            'entreprise' => 'Demo Corp',
+            'message' => 'Besoin d un devis pour le module RH.',
+        ]);
+
+        $admin = User::where('email', 'admin@cvapp.test')->first();
+        $rh = User::where('email', 'rh@cvapp.test')->first();
+
+        $this->actingAs($admin)
+            ->get(route('admin.messages-contact'))
+            ->assertOk();
+
+        $this->actingAs($rh)
+            ->get(route('admin.messages-contact'))
+            ->assertForbidden();
+
+        $message = MessageContact::first();
+        $this->actingAs($admin)
+            ->patch(route('admin.messages-contact.lu', $message))
+            ->assertRedirect();
+
+        $this->assertTrue($message->fresh()->lu);
     }
 
     public function test_service_analyse_score(): void

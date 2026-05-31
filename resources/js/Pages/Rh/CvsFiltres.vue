@@ -32,6 +32,7 @@ const filtreMotCle = ref("");
 const filtrePoste = ref("");
 const filtreStatut = ref("");
 const tri = ref("matches_desc");
+const filtresOuverts = ref(false);
 const selectedIds = ref([]);
 
 watch([filtrePoste, filtreStatut, filtreMotCle], () => {
@@ -46,7 +47,7 @@ const cvsFiltres = computed(() => {
         filtreMotCle: filtreMotCle.value,
     });
     return [...list].sort((a, b) =>
-        trierCvs(a, b, tri.value, { nullSafeScores: true })
+        trierCvs(a, b, tri.value, { nullSafeScores: true }),
     );
 });
 
@@ -114,7 +115,7 @@ function confirmerAnalyse() {
 function annulerAnalyse() {
     if (
         !confirm(
-            "Effacer cette analyse ? Les scores provisoires seront supprimés, sans modifier les statuts ni envoyer d'e-mails."
+            "Effacer cette analyse ? Les scores provisoires seront supprimés, sans modifier les statuts ni envoyer d'e-mails.",
         )
     ) {
         return;
@@ -130,16 +131,20 @@ function annulerAnalyse() {
             <h1>Résultats de l'analyse</h1>
             <p>
                 Mots-clés : <strong>{{ mots_cles.join(", ") }}</strong>
-                <span v-if="modeAnalyse === 'non_valides'" class="badge badge--refuse" style="margin-left: 0.5rem">
+                <span
+                    v-if="modeAnalyse === 'non_valides'"
+                    class="badge badge--refuse"
+                    style="margin-left: 0.5rem"
+                >
                     Lot : non validés uniquement (&lt; 30 j. depuis dépôt)
                 </span>
             </p>
             <p class="text-muted" style="margin-top: 0.5rem">
-                Ici, les CV apparaissent <strong>en cours d'analyse</strong> pour
-                travailler sur le lot. Validez ou refusez, puis confirmez : seule
-                la confirmation applique les statuts définitifs et envoie les
-                e-mails (la liste des CV reçus et la page candidat restent
-                inchangées avant cela).
+                Ici, les CV apparaissent
+                <strong>en cours d'analyse</strong> pour travailler sur le lot.
+                Validez ou refusez, puis confirmez : seule la confirmation
+                applique les statuts définitifs et envoie les e-mails (la liste
+                des CV reçus et la page candidat restent inchangées avant cela).
             </p>
             <div class="table-actions" style="margin-top: 0.75rem">
                 <Link href="/rh/cvs" class="btn btn--ghost">
@@ -148,18 +153,24 @@ function annulerAnalyse() {
                 <button
                     type="button"
                     class="btn btn--primary"
-                    :disabled="confirmerForm.processing || annulerForm.processing"
+                    :disabled="
+                        confirmerForm.processing || annulerForm.processing
+                    "
                     @click="confirmerAnalyse"
                 >
                     Confirmer l'analyse
                     <template v-if="nbDecisions">
-                        ({{ nbDecisions }} décision{{ nbDecisions > 1 ? "s" : "" }})
+                        ({{ nbDecisions }} décision{{
+                            nbDecisions > 1 ? "s" : ""
+                        }})
                     </template>
                 </button>
                 <button
                     type="button"
                     class="btn btn--ghost btn--danger"
-                    :disabled="confirmerForm.processing || annulerForm.processing"
+                    :disabled="
+                        confirmerForm.processing || annulerForm.processing
+                    "
                     @click="annulerAnalyse"
                 >
                     Effacer cette analyse
@@ -186,36 +197,54 @@ function annulerAnalyse() {
             </div>
         </div>
 
-        <div class="card cvs-liste-toolbar cvs-liste-toolbar--wide">
+        <div
+            class="card cvs-liste-toolbar cvs-liste-toolbar--wide cvs-liste-toolbar--collapsible"
+        >
             <h2 class="card__title card__title--sm">Filtres et tri</h2>
             <div
-                class="cvs-liste-toolbar__grid cvs-liste-toolbar__grid--filters-analyse"
+                class="cvs-liste-toolbar__filters-wrap cvs-liste-toolbar__filters-wrap--analyse"
             >
-                <div class="form-group cvs-liste-toolbar__field">
-                    <label>Rechercher</label>
-                    <input
-                        v-model="recherche"
-                        type="search"
-                        placeholder="Nom ou e-mail…"
-                    />
+                <div class="cvs-liste-toolbar__primary">
+                    <div class="form-group cvs-liste-toolbar__field">
+                        <label>Rechercher</label>
+                        <input
+                            v-model="recherche"
+                            type="search"
+                            placeholder="Nom ou e-mail…"
+                        />
+                    </div>
+                    <div class="form-group cvs-liste-toolbar__field">
+                        <label>Mot-clé trouvé</label>
+                        <input
+                            v-model="filtreMotCle"
+                            type="search"
+                            placeholder="Ex. Laravel, vue…"
+                        />
+                    </div>
                 </div>
-                <div class="form-group cvs-liste-toolbar__field">
-                    <label>Mot-clé trouvé</label>
-                    <input
-                        v-model="filtreMotCle"
-                        type="search"
-                        placeholder="Ex. Laravel, vue…"
-                    />
-                </div>
-                <div class="form-group cvs-liste-toolbar__field">
-                    <label>Poste</label>
+                <button
+                    type="button"
+                    class="btn btn--secondary btn--sm cvs-liste-toolbar__toggle-filters"
+                    :aria-expanded="filtresOuverts"
+                    @click="filtresOuverts = !filtresOuverts"
+                >
+                    {{
+                        filtresOuverts
+                            ? "Masquer les filtres"
+                            : "Filtres et tri"
+                    }}
+                </button>
+                <div
+                    class="cvs-liste-toolbar__more cvs-liste-toolbar__grid cvs-liste-toolbar__grid--filters-analyse"
+                    :class="{
+                        'cvs-liste-toolbar__grid--collapsed': !filtresOuverts,
+                    }"
+                >
+                    <div class="form-group cvs-liste-toolbar__field">
+                        <label>Poste</label>
                     <select v-model="filtrePoste">
                         <option value="">— Tous les postes —</option>
-                        <option
-                            v-for="p in postes"
-                            :key="p.id"
-                            :value="p.id"
-                        >
+                        <option v-for="p in postes" :key="p.id" :value="p.id">
                             {{ p.titre }}
                         </option>
                     </select>
@@ -227,7 +256,9 @@ function annulerAnalyse() {
                         <option value="en_cours_analyse">
                             En cours d'analyse
                         </option>
-                        <option value="valide">Validé (à confirmer inclus)</option>
+                        <option value="valide">
+                            Validé (à confirmer inclus)
+                        </option>
                         <option value="non_valide">
                             Refusé (à confirmer inclus)
                         </option>
@@ -256,7 +287,8 @@ function annulerAnalyse() {
                         <option value="date_depot_asc">
                             Date de dépôt (ancien)
                         </option>
-                    </select>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="cvs-liste-toolbar__actions">
@@ -324,9 +356,7 @@ function annulerAnalyse() {
                         <div class="cvs-row__meta-item">
                             <dt>Score</dt>
                             <dd>
-                                <span
-                                    v-if="cv.score != null"
-                                    class="score-pill"
+                                <span v-if="cv.score != null" class="score-pill"
                                     >{{ cv.score }}%</span
                                 >
                                 <span v-else class="text-muted">—</span>
@@ -383,7 +413,10 @@ function annulerAnalyse() {
                             Annuler la décision
                         </button>
                         <button
-                            v-if="peutDecider(cv) || cv.decision_provisoire !== 'valide'"
+                            v-if="
+                                peutDecider(cv) ||
+                                cv.decision_provisoire !== 'valide'
+                            "
                             type="button"
                             class="btn btn--success btn--sm"
                             @click="valider(cv)"
@@ -391,7 +424,10 @@ function annulerAnalyse() {
                             Valider
                         </button>
                         <button
-                            v-if="peutDecider(cv) || cv.decision_provisoire !== 'non_valide'"
+                            v-if="
+                                peutDecider(cv) ||
+                                cv.decision_provisoire !== 'non_valide'
+                            "
                             type="button"
                             class="btn btn--danger btn--sm"
                             @click="refuser(cv)"

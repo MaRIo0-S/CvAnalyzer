@@ -1,10 +1,12 @@
 <script setup>
 import { Link, usePage } from "@inertiajs/vue3";
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ToastContainer from "@/Components/ToastContainer.vue";
 import SiteLogo from "@/Components/SiteLogo.vue";
 import NotificationBell from "@/Components/NotificationBell.vue";
 import { useFlashToast } from "@/composables/useFlashToast";
+
+const NAV_DESKTOP_MQ = "(min-width: 1024px)";
 
 defineProps({
     landing: { type: Boolean, default: false },
@@ -63,6 +65,9 @@ function isNavActive(href) {
     if (href === "/admin/back-office") {
         return p.startsWith("/admin/back-office");
     }
+    if (href === "/admin/messages-contact") {
+        return p.startsWith("/admin/messages-contact");
+    }
     if (href === "/candidat/statut") {
         return p.startsWith("/candidat");
     }
@@ -78,6 +83,51 @@ function isNavActive(href) {
 
 function navLinkClass(href) {
     return ["nav-link", { "nav-link--active": isNavActive(href) }];
+}
+
+const navOpen = ref(false);
+const isDesktopNav = ref(false);
+
+watch(
+    () => page.url,
+    () => {
+        navOpen.value = false;
+    }
+);
+
+let removeMqListener = null;
+
+onMounted(() => {
+    const mq = window.matchMedia(NAV_DESKTOP_MQ);
+    const sync = () => {
+        isDesktopNav.value = mq.matches;
+        if (mq.matches) {
+            navOpen.value = false;
+        }
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    removeMqListener = () => mq.removeEventListener("change", sync);
+});
+
+function lockBodyScroll(lock) {
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("nav-menu-open", lock);
+}
+
+watch(navOpen, (open) => lockBodyScroll(open));
+
+onUnmounted(() => {
+    removeMqListener?.();
+    lockBodyScroll(false);
+});
+
+function toggleNav() {
+    navOpen.value = !navOpen.value;
+}
+
+function closeNav() {
+    navOpen.value = false;
 }
 
 const homeUrl = computed(() => {
@@ -99,17 +149,47 @@ const homeUrl = computed(() => {
 </script>
 
 <template>
-    <div class="app-layout" :class="{ 'app-layout--landing': landing }">
-        <header class="app-header">
-            <Link :href="homeUrl" class="app-header__brand">
-                <SiteLogo />
-                <span class="app-header__name">{{ appName }}</span>
-            </Link>
-            <nav class="app-header__nav">
+    <div
+        class="app-layout"
+        :class="{ 'app-layout--landing': landing }"
+    >
+        <div class="app-shell-header">
+            <header class="app-header">
+                <Link :href="homeUrl" class="app-header__brand" @click="closeNav">
+                    <SiteLogo />
+                    <span class="app-header__name">{{ appName }}</span>
+                </Link>
+                <div class="app-header__end">
+                    <NotificationBell
+                        v-if="user?.role === 'candidat'"
+                        class="app-header__notif-slot"
+                    />
+                    <button
+                        type="button"
+                        class="app-header__toggle"
+                        :class="{ 'app-header__toggle--open': navOpen }"
+                        :aria-expanded="navOpen"
+                        aria-controls="app-header-nav"
+                        @click="toggleNav"
+                    >
+                        <span class="sr-only">{{
+                            navOpen ? "Fermer le menu" : "Ouvrir le menu"
+                        }}</span>
+                        <span class="app-header__toggle-bar" aria-hidden="true" />
+                    </button>
+                </div>
+            </header>
+            <Teleport to="body" :disabled="isDesktopNav">
+                <nav
+                    id="app-header-nav"
+                    class="app-header__nav"
+                    :class="{ 'app-header__nav--open': navOpen }"
+                >
                 <Link
                     v-if="peutDeposer"
                     href="/deposer"
                     :class="navLinkClass('/deposer')"
+                    @click="closeNav"
                     >Déposer un CV</Link
                 >
                 <template v-if="user">
@@ -117,37 +197,53 @@ const homeUrl = computed(() => {
                         <Link
                             href="/admin/back-office"
                             :class="navLinkClass('/admin/back-office')"
+                            @click="closeNav"
                             >Back-office</Link
+                        >
+                        <Link
+                            href="/admin/messages-contact"
+                            :class="navLinkClass('/admin/messages-contact')"
+                            @click="closeNav"
+                            >Messages</Link
                         >
                         <Link
                             href="/admin/sous-admins"
                             :class="navLinkClass('/admin/sous-admins')"
+                            @click="closeNav"
                             >Sub-admins</Link
                         >
                     </template>
                     <template v-else-if="user.role === 'sous_admin'">
-                        <Link href="/rh" :class="navLinkClass('/rh')"
+                        <Link
+                            href="/rh"
+                            :class="navLinkClass('/rh')"
+                            @click="closeNav"
                             >Tableau de bord</Link
                         >
                         <Link
                             href="/rh/cvs/liste"
                             :class="navLinkClass('/rh/cvs/liste')"
+                            @click="closeNav"
                             >CVs reçus</Link
                         >
-                        <Link href="/rh/cvs" :class="navLinkClass('/rh/cvs')"
+                        <Link
+                            href="/rh/cvs"
+                            :class="navLinkClass('/rh/cvs')"
+                            @click="closeNav"
                             >Analyser</Link
                         >
                         <Link
                             href="/rh/postes"
                             :class="navLinkClass('/rh/postes')"
+                            @click="closeNav"
                             >Postes</Link
                         >
                     </template>
                     <template v-else-if="user.role === 'candidat'">
-                        <NotificationBell />
                         <Link
                             href="/candidat/statut"
                             :class="navLinkClass('/candidat/statut')"
+                            @click="closeNav"
                             >Ma candidature</Link
                         >
                     </template>
@@ -158,12 +254,14 @@ const homeUrl = computed(() => {
                         "
                         href="/compte"
                         :class="navLinkClass('/compte')"
+                        @click="closeNav"
                         >Mon compte</Link
                     >
                     <Link
                         v-else
                         href="/compte/mot-de-passe"
                         :class="navLinkClass('/compte')"
+                        @click="closeNav"
                         >Mot de passe</Link
                     >
                     <Link
@@ -171,20 +269,37 @@ const homeUrl = computed(() => {
                         method="post"
                         as="button"
                         class="btn btn--ghost"
+                        @click="closeNav"
                     >
                         Déconnexion
                     </Link>
                 </template>
                 <template v-else>
-                    <Link href="/inscription" class="btn btn--secondary"
+                    <Link
+                        href="/inscription"
+                        class="btn btn--secondary"
+                        @click="closeNav"
                         >S'inscrire</Link
                     >
-                    <Link href="/login" class="btn btn--primary"
+                    <Link
+                        href="/login"
+                        class="btn btn--primary"
+                        @click="closeNav"
                         >Se connecter</Link
                     >
                 </template>
-            </nav>
-        </header>
+                </nav>
+            </Teleport>
+        </div>
+
+        <Teleport to="body" :disabled="isDesktopNav">
+            <div
+                class="app-header__backdrop"
+                :class="{ 'app-header__backdrop--visible': navOpen }"
+                aria-hidden="true"
+                @click="closeNav"
+            />
+        </Teleport>
 
         <main class="app-main">
             <slot />

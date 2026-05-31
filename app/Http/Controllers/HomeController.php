@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Models\MessageContact;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -35,11 +35,11 @@ class HomeController extends Controller
         $validated = $request->validate([
             'nom' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255'],
-            'entreprise' => ['nullable', 'string', 'max:150'],
+            'entreprise' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'min:10', 'max:2000'],
         ]);
 
-        Log::info('Contact landing CV Analyzer', $validated);
+        MessageContact::create($validated);
 
         return redirect()
             ->route('home')

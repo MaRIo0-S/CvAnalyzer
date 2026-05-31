@@ -87,6 +87,7 @@ const form = useForm({
         </div>
 
         <div class="card">
+            <div class="table-responsive">
             <table class="table">
                 <thead>
                     <tr>
@@ -125,6 +126,7 @@ const form = useForm({
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </AppLayout>
 </template>

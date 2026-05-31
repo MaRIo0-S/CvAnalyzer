@@ -49,19 +49,19 @@ const rhBenefits = [
 
 const valueProps = [
     {
-        icon: "📄",
+        icon: "document",
         title: "Dépôt en quelques minutes",
         text: "Choisissez l'entreprise et le poste, ajoutez vos coordonnées et envoyez votre CV — avec ou sans compte.",
         tone: "cyan",
     },
     {
-        icon: "🔔",
+        icon: "bell",
         title: "Suivi de votre candidature",
         text: "Créez un compte pour consulter votre statut en ligne et recevoir un e-mail à chaque étape importante.",
         tone: "indigo",
     },
     {
-        icon: "✏️",
+        icon: "edit",
         title: "24 h pour corriger",
         text: "Après l'envoi, vous pouvez encore modifier le poste, vos coordonnées ou remplacer votre fichier.",
         tone: "emerald",
@@ -271,9 +271,48 @@ function toggleFaqRh(index) {
                             class="value-prop"
                             :class="`value-prop--${item.tone}`"
                         >
-                            <span class="value-prop__icon">{{
-                                item.icon
-                            }}</span>
+                            <span
+                                class="value-prop__icon"
+                                :class="`value-prop__icon--${item.tone}`"
+                                aria-hidden="true"
+                            >
+                                <svg
+                                    v-if="item.icon === 'document'"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    />
+                                    <path d="M14 2v6h6" />
+                                    <path d="M8 13h8M8 17h5" />
+                                </svg>
+                                <svg
+                                    v-else-if="item.icon === 'bell'"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                                    />
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                </svg>
+                                <svg
+                                    v-else-if="item.icon === 'edit'"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+                                    />
+                                </svg>
+                            </span>
                             <h3>{{ item.title }}</h3>
                             <p>{{ item.text }}</p>
                         </article>
@@ -643,13 +682,12 @@ function toggleFaqRh(index) {
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="contact-entreprise"
-                                >Entreprise (optionnel)</label
-                            >
+                            <label for="contact-entreprise">Entreprise</label>
                             <input
                                 id="contact-entreprise"
                                 v-model="contactForm.entreprise"
                                 type="text"
+                                required
                                 autocomplete="organization"
                                 placeholder="Nom de votre société"
                             />
@@ -661,7 +699,7 @@ function toggleFaqRh(index) {
                                 v-model="contactForm.message"
                                 required
                                 rows="5"
-                                placeholder="Décrivez votre besoin (nombre de postes, volume de CV, délai…)"
+                                placeholder="Décrivez votre besoin"
                             />
                         </div>
                         <button

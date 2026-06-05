@@ -5,6 +5,7 @@ import ToastContainer from "@/Components/ToastContainer.vue";
 import SiteLogo from "@/Components/SiteLogo.vue";
 import NotificationBell from "@/Components/NotificationBell.vue";
 import { useFlashToast } from "@/composables/useFlashToast";
+import { useStaffPaths } from "@/composables/useStaffPaths";
 
 const NAV_DESKTOP_MQ = "(min-width: 1024px)";
 
@@ -15,12 +16,18 @@ defineProps({
 useFlashToast();
 
 const page = usePage();
+const paths = useStaffPaths();
 const user = computed(() => page.props.auth?.user);
 const appName = computed(() => page.props.appName ?? "CV Analyzer");
 
-const peutDeposer = computed(() => {
+const peutVoirOffres = computed(() => {
     if (!user.value) return true;
     return user.value.role === "candidat";
+});
+
+const peutCompte = computed(() => {
+    if (!user.value) return false;
+    return user.value.role === "candidat" || user.value.role === "super_admin";
 });
 
 const currentPath = computed(() => page.url.split("?")[0]);
@@ -59,14 +66,26 @@ function isNavActive(href) {
     if (href === "/rh/postes") {
         return p.startsWith("/rh/postes");
     }
-    if (href === "/admin/sous-admins") {
-        return p.startsWith("/admin/sous-admins");
+    if (href === paths.value.adminGerants) {
+        return (
+            p.startsWith(`${paths.value.admin}/super-admins`) ||
+            p.startsWith(`${paths.value.admin}/sous-admins`)
+        );
     }
-    if (href === "/admin/back-office") {
-        return p.startsWith("/admin/back-office");
+    if (href === paths.value.gerantDashboard) {
+        return p === paths.value.gerant || p === `${paths.value.gerant}/`;
     }
-    if (href === "/admin/messages-contact") {
-        return p.startsWith("/admin/messages-contact");
+    if (href === paths.value.gerantRh) {
+        return p.startsWith(`${paths.value.gerant}/rh`);
+    }
+    if (href === "/rh/cvs/importer") {
+        return p.startsWith("/rh/cvs/importer");
+    }
+    if (href === paths.value.adminBackOffice) {
+        return p.startsWith(`${paths.value.admin}/back-office`);
+    }
+    if (href === paths.value.adminMessages) {
+        return p.startsWith(`${paths.value.admin}/messages-contact`);
     }
     if (href === "/candidat/statut") {
         return p.startsWith("/candidat");
@@ -137,7 +156,9 @@ const homeUrl = computed(() => {
 
     switch (user.value.role) {
         case "admin":
-            return "/admin/sous-admins";
+            return paths.value.adminBackOffice;
+        case "super_admin":
+            return paths.value.gerantDashboard;
         case "sous_admin":
             return "/rh";
         case "candidat":
@@ -186,31 +207,45 @@ const homeUrl = computed(() => {
                     :class="{ 'app-header__nav--open': navOpen }"
                 >
                 <Link
-                    v-if="peutDeposer"
-                    href="/deposer"
-                    :class="navLinkClass('/deposer')"
+                    v-if="peutVoirOffres"
+                    href="/offres"
+                    :class="navLinkClass('/offres')"
                     @click="closeNav"
-                    >Déposer un CV</Link
+                    >Offres d'emploi</Link
                 >
                 <template v-if="user">
                     <template v-if="user.role === 'admin'">
                         <Link
-                            href="/admin/back-office"
-                            :class="navLinkClass('/admin/back-office')"
+                            :href="paths.adminBackOffice"
+                            :class="navLinkClass(paths.adminBackOffice)"
                             @click="closeNav"
                             >Back-office</Link
                         >
                         <Link
-                            href="/admin/messages-contact"
-                            :class="navLinkClass('/admin/messages-contact')"
+                            :href="paths.adminMessages"
+                            :class="navLinkClass(paths.adminMessages)"
                             @click="closeNav"
                             >Messages</Link
                         >
                         <Link
-                            href="/admin/sous-admins"
-                            :class="navLinkClass('/admin/sous-admins')"
+                            :href="paths.adminGerants"
+                            :class="navLinkClass(paths.adminGerants)"
                             @click="closeNav"
-                            >Sub-admins</Link
+                            >Gérants</Link
+                        >
+                    </template>
+                    <template v-else-if="user.role === 'super_admin'">
+                        <Link
+                            :href="paths.gerantDashboard"
+                            :class="navLinkClass(paths.gerantDashboard)"
+                            @click="closeNav"
+                            >Back-office</Link
+                        >
+                        <Link
+                            :href="paths.gerantRh"
+                            :class="navLinkClass(paths.gerantRh)"
+                            @click="closeNav"
+                            >Équipe RH</Link
                         >
                     </template>
                     <template v-else-if="user.role === 'sous_admin'">
@@ -248,21 +283,11 @@ const homeUrl = computed(() => {
                         >
                     </template>
                     <Link
-                        v-if="
-                            user.role === 'candidat' ||
-                            user.role === 'sous_admin'
-                        "
+                        v-if="peutCompte"
                         href="/compte"
                         :class="navLinkClass('/compte')"
                         @click="closeNav"
                         >Mon compte</Link
-                    >
-                    <Link
-                        v-else
-                        href="/compte/mot-de-passe"
-                        :class="navLinkClass('/compte')"
-                        @click="closeNav"
-                        >Mot de passe</Link
                     >
                     <Link
                         href="/logout"

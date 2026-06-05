@@ -20,18 +20,20 @@ class MessageContactController extends Controller
                 'id' => $m->id,
                 'nom' => $m->nom,
                 'email' => $m->email,
+                'telephone' => $m->telephone,
                 'entreprise' => $m->entreprise,
                 'message' => $m->message,
                 'lu' => $m->lu,
                 'recu_le' => $m->created_at?->format('d/m/Y H:i'),
                 'recu_at' => $m->created_at?->toIso8601String(),
-            ]);
+            ])
+            ->values();
 
         return Inertia::render('Admin/MessagesContact', [
             'messages' => $messages,
             'stats' => [
                 'total' => $messages->count(),
-                'non_lus' => $messages->where('lu', false)->count(),
+                'non_lus' => $messages->filter(fn ($m) => ! $m['lu'])->count(),
             ],
         ]);
     }

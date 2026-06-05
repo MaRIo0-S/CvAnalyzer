@@ -2,6 +2,10 @@
 import { router } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
+import SearchSelect from "@/Components/SearchSelect.vue";
+import { useStaffPaths } from "@/composables/useStaffPaths";
+
+const paths = useStaffPaths();
 
 const props = defineProps({
     messages: { type: Array, default: () => [] },
@@ -18,7 +22,7 @@ const tri = ref("date_desc");
 const filtresOuverts = ref(false);
 
 function marquerLu(id) {
-    router.patch(`/admin/messages-contact/${id}/lu`, {}, { preserveScroll: true });
+    router.patch(`${paths.value.admin}/messages-contact/${id}/lu`, {}, { preserveScroll: true });
 }
 
 function reinitialiserFiltres() {
@@ -35,6 +39,10 @@ const entreprisesOptions = computed(() =>
     [...new Set(props.messages.map((m) => m.entreprise))]
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, "fr"))
+);
+
+const entrepriseFilterItems = computed(() =>
+    entreprisesOptions.value.map((nom) => ({ id: nom, label: nom }))
 );
 
 const filtresActifs = computed(
@@ -100,7 +108,7 @@ function dansPeriode(recuAt) {
 function correspondRecherche(m, q) {
     if (!q) return true;
     const needle = q.trim().toLowerCase();
-    const hay = [m.nom, m.email, m.entreprise, m.message]
+    const hay = [m.nom, m.email, m.telephone, m.entreprise, m.message]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -193,7 +201,7 @@ const toolbarHint = computed(() => {
                         id="msg-recherche"
                         v-model="recherche"
                         type="search"
-                        placeholder="Nom, e-mail, entreprise, message…"
+                        placeholder="Saisissez un nom, e-mail ou message…"
                         autocomplete="off"
                     />
                 </div>
@@ -231,19 +239,12 @@ const toolbarHint = computed(() => {
                         <option value="lu">Lus</option>
                     </select>
                 </div>
-                <div class="form-group cvs-liste-toolbar__field">
-                    <label for="msg-entreprise">Entreprise</label>
-                    <select id="msg-entreprise" v-model="filtreEntreprise">
-                        <option value="">Toutes</option>
-                        <option
-                            v-for="nom in entreprisesOptions"
-                            :key="nom"
-                            :value="nom"
-                        >
-                            {{ nom }}
-                        </option>
-                    </select>
-                </div>
+                <SearchSelect
+                    v-model="filtreEntreprise"
+                    :items="entrepriseFilterItems"
+                    label="Entreprise"
+                    placeholder="Saisissez ou sélectionnez une entreprise…"
+                />
                 <div class="form-group cvs-liste-toolbar__field">
                     <label for="msg-periode">Période</label>
                     <select id="msg-periode" v-model="periode">
@@ -300,19 +301,9 @@ const toolbarHint = computed(() => {
             <p v-if="!messages.length" class="text-muted">
                 Aucun message pour le moment.
             </p>
-            <p
-                v-else-if="!messagesFiltres.length"
-                class="text-muted"
-            >
-                Aucun message ne correspond à ces critères.
-                <button
-                    type="button"
-                    class="btn btn--secondary btn--sm"
-                    style="margin-left: 0.5rem"
-                    @click="reinitialiserFiltres"
-                >
-                    Effacer les filtres
-                </button>
+            <p v-else-if="!messagesFiltres.length" class="text-muted">
+                Aucun message ne correspond à ces critères. Utilisez
+                « Réinitialiser » pour effacer les filtres.
             </p>
             <div v-else class="contact-inbox">
                 <article
@@ -330,6 +321,9 @@ const toolbarHint = computed(() => {
                     </header>
                     <p class="contact-inbox__email">
                         <a :href="`mailto:${m.email}`">{{ m.email }}</a>
+                        <span v-if="m.telephone" class="text-muted">
+                            · {{ m.telephone }}</span
+                        >
                     </p>
                     <p class="contact-inbox__body">{{ m.message }}</p>
                     <footer class="contact-inbox__footer">

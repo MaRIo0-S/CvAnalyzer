@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Enums\StatutCv;
 use App\Mail\StatutCandidatureMail;
+use App\Support\CandidatureSession;
+use App\Support\DepotOffreSession;
 use App\Models\Cv;
 use App\Models\Entreprise;
 use App\Models\Poste;
@@ -19,7 +22,65 @@ class GuestCvController extends Controller
 
     public function create(Request $request)
     {
+        if ($request->user()?->role === Role::SousAdmin) {
+            abort(403);
+        }
+
+        $cvModifiable = $this->cvModifiablePourSession($request);
+
+        if ($cvModifiable) {
+            $posteId = $request->integer('poste_id') ?: (int) $cvModifiable['poste_id'];
+            if ($request->integer('poste_id') && ! DepotOffreSession::estAutorise($request, $posteId)) {
+                return redirect()
+                    ->route('offres.index')
+                    ->with('info', 'Consultez d\'abord l\'offre choisie, puis revenez modifier votre candidature.');
+            }
+
+            $poste = Poste::where('est_ouvert', true)->findOrFail($posteId);
+            $cvModifiable['poste_id'] = $poste->id;
+            $cvModifiable['entreprise_id'] = $poste->entreprise_id;
+            $cvModifiable['poste'] = $poste->titre;
+            $cvModifiable['entreprise'] = $poste->entreprise?->nom;
+
+            return Inertia::render('Guest/Deposer', [
+                'pageMode' => 'modify',
+                'prefill' => null,
+                'champsVerrouilles' => false,
+                'entreprises' => Entreprise::avecRh()->orderBy('nom')->get(['id', 'nom', 'description']),
+                'postes' => Poste::where('est_ouvert', true)
+                    ->whereHas('entreprise', fn ($q) => $q->avecRh())
+                    ->orderBy('titre')
+                    ->get(['id', 'titre', 'description', 'entreprise_id']),
+                'graceHours' => config('cv.grace_period_hours'),
+                'cvModifiable' => $cvModifiable,
+                'isLoggedIn' => (bool) $request->user(),
+                'userDefaults' => $request->user() ? [
+                    'nom_candidat' => $request->user()->name,
+                    'email_candidat' => $request->user()->email,
+                ] : null,
+            ]);
+        }
+
+        $posteId = $request->integer('poste_id') ?: DepotOffreSession::posteId($request);
+
+        if (! DepotOffreSession::estAutorise($request, $posteId)) {
+            return redirect()
+                ->route('offres.index')
+                ->with('info', 'Choisissez une offre, consultez-la, puis déposez votre CV depuis cette page.');
+        }
+
+        $poste = Poste::where('est_ouvert', true)->findOrFail($posteId);
+        $prefill = [
+            'poste_id' => $poste->id,
+            'entreprise_id' => $poste->entreprise_id,
+            'poste_titre' => $poste->titre,
+            'entreprise_nom' => $poste->entreprise?->nom,
+        ];
+
         return Inertia::render('Guest/Deposer', [
+            'pageMode' => 'deposit',
+            'prefill' => $prefill,
+            'champsVerrouilles' => true,
             'entreprises' => Entreprise::avecRh()->orderBy('nom')->get(['id', 'nom', 'description']),
             'postes' => Poste::where('est_ouvert', true)
                 ->whereHas('entreprise', fn ($q) => $q->avecRh())
@@ -119,15 +180,13 @@ class GuestCvController extends Controller
 
         $message = "CV déposé (dossier n°{$cv->id}). {$graceHours} h pour modifier votre dossier.";
 
-        if ($user) {
-            $mailEnvoye = StatutCandidatureMail::envoyer($cv->fresh(), StatutCv::CvRecu);
-            if ($mailEnvoye) {
-                $message .= ' Un e-mail de confirmation a été envoyé sur l\'adresse de votre compte.';
-            } elseif (config('mail.default', 'log') === 'log') {
-                $message .= ' (E-mail non expédié : configurez SMTP dans .env.)';
-            }
-        } else {
-            $message .= ' Sans compte : pas de suivi ni d\'e-mail automatique ; le recruteur vous contactera via les coordonnées de votre CV si besoin.';
+        $mailEnvoye = StatutCandidatureMail::envoyer($cv->fresh(), StatutCv::CvRecu);
+        if ($mailEnvoye) {
+            $message .= ' Un e-mail de confirmation a été envoyé.';
+        } elseif (filled($cv->email_candidat) && config('mail.default', 'log') === 'log') {
+            $message .= ' (E-mail non expédié : configurez SMTP dans .env — MAIL_MAILER=smtp, etc.)';
+        } elseif (! $user) {
+            $message .= ' Sans compte : pas de suivi en ligne ; conservez votre n° de dossier.';
         }
 
         return redirect()->route('guest.deposer')->with('success', $message);
@@ -220,28 +279,22 @@ class GuestCvController extends Controller
 
     private function cvModifiablePourSession(Request $request): ?array
     {
-        $cv = null;
-
-        if ($request->user()) {
-            $cv = $request->user()->cvs()->orderBy('date_depot', 'desc')->first();
-        } elseif ($request->session()->has('guest_cv_id')) {
-            $cv = Cv::find($request->session()->get('guest_cv_id'));
+        $base = CandidatureSession::enCours($request);
+        if (! $base) {
+            return null;
         }
 
-        if (! $cv || ! $cv->peutModifier() || ! $this->peutAccederAuCv($request, $cv)) {
+        $cv = Cv::find($base['id']);
+        if (! $cv || ! $this->peutAccederAuCv($request, $cv)) {
             return null;
         }
 
         return [
-            'id' => $cv->id,
-            'reference' => $cv->id,
+            ...$base,
             'nom_candidat' => $cv->nom_candidat,
             'email_candidat' => $cv->email_candidat,
             'entreprise_id' => $cv->entreprise_id,
             'poste_id' => $cv->poste_id,
-            'poste' => $cv->poste?->titre,
-            'entreprise' => $cv->entreprise?->nom,
-            'modifiable_jusqu' => $cv->modifiable_jusqu?->format('d/m/Y à H:i'),
         ];
     }
 }

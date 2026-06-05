@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'admin_id', 'entreprise_id'])]
+#[Fillable([
+    'name', 'email', 'telephone', 'password', 'role', 'est_actif',
+    'etat_cascade_snapshot', 'admin_id', 'super_admin_id', 'entreprise_id',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -18,6 +21,8 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'role' => Role::class,
+            'est_actif' => 'boolean',
+            'etat_cascade_snapshot' => 'array',
         ];
     }
 
@@ -26,15 +31,34 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'admin_id');
     }
 
+    public function superAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'super_admin_id');
+    }
+
     public function entreprise(): BelongsTo
     {
         return $this->belongsTo(Entreprise::class);
     }
 
-    public function sousAdmins(): HasMany
+    /** Gérants créés par l’admin plateforme */
+    public function superAdmins(): HasMany
     {
         return $this->hasMany(User::class, 'admin_id')
+            ->where('role', Role::SuperAdmin);
+    }
+
+    /** RH gérés par un super-admin */
+    public function rhEquipe(): HasMany
+    {
+        return $this->hasMany(User::class, 'super_admin_id')
             ->where('role', Role::SousAdmin);
+    }
+
+    /** @deprecated Utiliser rhEquipe() */
+    public function sousAdmins(): HasMany
+    {
+        return $this->rhEquipe();
     }
 
     public function postes(): HasMany
@@ -60,6 +84,11 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === Role::Admin;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === Role::SuperAdmin;
     }
 
     public function isSousAdmin(): bool

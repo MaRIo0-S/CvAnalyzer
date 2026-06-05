@@ -2,6 +2,7 @@
 import { Link } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
+import SearchSelect from "@/Components/SearchSelect.vue";
 import { useCvDecision } from "@/composables/useCvDecision";
 import { useToastStore } from "@/stores/toast";
 import { badgeClassFromCv, filtrerCvs, trierCvs } from "@/utils/cvList";
@@ -18,13 +19,17 @@ const filtreMotCle = ref("");
 const filtrePoste = ref("");
 const filtreStatut = ref("");
 const filtreModification = ref("");
+const filtreImportRh = ref("");
 const tri = ref("date_depot_desc");
-const filtresOuverts = ref(false);
 const selectedIds = ref([]);
 const toast = useToastStore();
 const { peutDecider, valider, refuser } = useCvDecision();
 
 const triAnalyseDisponible = computed(() => filtreStatut.value !== "cv_recu");
+
+const posteItems = computed(() =>
+    (props.postes || []).map((p) => ({ id: p.id, label: p.titre }))
+);
 
 const toolbarHint = computed(() => {
     if (filtreModification.value === "encore_modifiable") {
@@ -64,6 +69,7 @@ const cvsFiltres = computed(() => {
         filtreStatut: filtreStatut.value,
         filtreMotCle: filtreMotCle.value,
         filtreModification: filtreModification.value,
+        filtreImportRh: filtreImportRh.value,
     });
     return [...list].sort((a, b) =>
         trierCvs(a, b, tri.value, { nullSafeScores: true }),
@@ -113,147 +119,117 @@ function telechargerZip(ids) {
             </p>
         </div>
 
-        <div
-            class="card cvs-liste-toolbar cvs-liste-toolbar--wide cvs-liste-toolbar--collapsible"
-        >
+        <p style="margin-bottom: 1.25rem">
+            <Link href="/rh/cvs/importer" class="btn btn--accent btn--sm"
+                >Importer un CV</Link
+            >
+        </p>
+
+        <div class="card cvs-liste-toolbar cvs-liste-toolbar--wide">
             <h2 class="card__title card__title--sm">Filtres et tri</h2>
-            <div class="cvs-liste-toolbar__filters-wrap">
-                <div class="cvs-liste-toolbar__primary">
-                    <div class="form-group cvs-liste-toolbar__field">
-                        <label>Rechercher</label>
-                        <input
-                            v-model="recherche"
-                            type="search"
-                            placeholder="Nom ou e-mail…"
-                        />
-                    </div>
-                    <div class="form-group cvs-liste-toolbar__field">
-                        <label
-                            title="Filtre les CV dont l'analyse contient ce mot-clé (hors statut « CV reçu » seul)"
-                        >
-                            Mot-clé trouvé
-                        </label>
-                        <input
-                            v-model="filtreMotCle"
-                            type="search"
-                            placeholder="Ex. Laravel, vue…"
-                            :disabled="filtreStatut === 'cv_recu'"
-                        />
-                    </div>
+            <div class="toolbar-row toolbar-row--unified toolbar-row--cvs">
+                <div class="form-group">
+                    <label>Rechercher</label>
+                    <input
+                        v-model="recherche"
+                        type="search"
+                        placeholder="Saisissez un nom ou un e-mail…"
+                    />
                 </div>
-                <button
-                    type="button"
-                    class="btn btn--secondary btn--sm cvs-liste-toolbar__toggle-filters"
-                    :aria-expanded="filtresOuverts"
-                    @click="filtresOuverts = !filtresOuverts"
-                >
-                    {{
-                        filtresOuverts
-                            ? "Masquer les filtres"
-                            : "Filtres et tri"
-                    }}
-                </button>
-                <div
-                    class="cvs-liste-toolbar__more cvs-liste-toolbar__grid cvs-liste-toolbar__grid--filters"
-                    :class="{
-                        'cvs-liste-toolbar__grid--collapsed': !filtresOuverts,
-                    }"
-                >
-                    <div class="form-group cvs-liste-toolbar__field">
-                        <label>Poste</label>
-                        <select v-model="filtrePoste">
-                            <option value="">— Tous les postes —</option>
-                            <option
-                                v-for="p in postes"
-                                :key="p.id"
-                                :value="p.id"
-                            >
-                                {{ p.titre }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group cvs-liste-toolbar__field">
-                        <label>Statut</label>
-                        <select v-model="filtreStatut">
-                            <option value="">— Tous —</option>
-                            <option value="cv_recu">CV reçu</option>
-                            <option value="en_cours_analyse">
-                                En cours d'analyse
-                            </option>
-                            <option value="valide">Validé</option>
-                            <option value="non_valide">Non validé</option>
-                        </select>
-                    </div>
-                    <div class="form-group cvs-liste-toolbar__field">
-                        <label
-                            title="Période de modification 24 h après le dépôt"
+                <div class="form-group">
+                    <label>Mot-clé trouvé</label>
+                    <input
+                        v-model="filtreMotCle"
+                        type="search"
+                        placeholder="Saisissez un mot-clé trouvé…"
+                        :disabled="filtreStatut === 'cv_recu'"
+                    />
+                </div>
+                <SearchSelect
+                    v-model="filtrePoste"
+                    :items="posteItems"
+                    label="Poste"
+                    placeholder="Saisissez ou sélectionnez un poste…"
+                />
+                <div class="form-group">
+                    <label>Statut</label>
+                    <select v-model="filtreStatut">
+                        <option value="">— Tous —</option>
+                        <option value="cv_recu">CV reçu</option>
+                        <option value="en_cours_analyse">
+                            En cours d'analyse
+                        </option>
+                        <option value="valide">Validé</option>
+                        <option value="non_valide">Non validé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Source</label>
+                    <select v-model="filtreImportRh">
+                        <option value="">— Toutes —</option>
+                        <option value="rh">Import RH</option>
+                        <option value="candidat">Candidats</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Période 24 h</label>
+                    <select v-model="filtreModification">
+                        <option value="">— Tous —</option>
+                        <option value="encore_modifiable">
+                            Encore modifiable
+                        </option>
+                        <option value="pret_premiere_analyse">
+                            Prêt pour analyse
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Trier par</label>
+                    <select v-model="tri">
+                        <option value="date_depot_desc">
+                            Date de dépôt (récent)
+                        </option>
+                        <option value="date_depot_asc">
+                            Date de dépôt (ancien)
+                        </option>
+                        <option value="statut">Statut</option>
+                        <option
+                            value="score_desc"
+                            :disabled="!triAnalyseDisponible"
                         >
-                            Période 24 h
-                        </label>
-                        <select
-                            v-model="filtreModification"
-                            class="cvs-liste-toolbar__select--wide"
+                            Score % (élevé)
+                        </option>
+                        <option
+                            value="score_asc"
+                            :disabled="!triAnalyseDisponible"
                         >
-                            <option value="">— Tous —</option>
-                            <option value="encore_modifiable">
-                                Encore modifiable
-                            </option>
-                            <option value="pret_premiere_analyse">
-                                Prêt pour analyse
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group cvs-liste-toolbar__field">
-                        <label>Trier par</label>
-                        <select
-                            v-model="tri"
-                            class="cvs-liste-toolbar__select--wide"
+                            Score % (faible)
+                        </option>
+                        <option
+                            value="matches_desc"
+                            :disabled="!triAnalyseDisponible"
                         >
-                            <option value="date_depot_desc">
-                                Date de dépôt (récent)
-                            </option>
-                            <option value="date_depot_asc">
-                                Date de dépôt (ancien)
-                            </option>
-                            <option value="statut">Statut</option>
-                            <option
-                                value="score_desc"
-                                :disabled="!triAnalyseDisponible"
-                            >
-                                Score % (élevé)
-                            </option>
-                            <option
-                                value="score_asc"
-                                :disabled="!triAnalyseDisponible"
-                            >
-                                Score % (faible)
-                            </option>
-                            <option
-                                value="matches_desc"
-                                :disabled="!triAnalyseDisponible"
-                            >
-                                Mots-clés (élevé)
-                            </option>
-                            <option
-                                value="matches_asc"
-                                :disabled="!triAnalyseDisponible"
-                            >
-                                Mots-clés (faible)
-                            </option>
-                            <option
-                                value="date_analyse_desc"
-                                :disabled="!triAnalyseDisponible"
-                            >
-                                Date d'analyse (récent)
-                            </option>
-                            <option
-                                value="date_analyse_asc"
-                                :disabled="!triAnalyseDisponible"
-                            >
-                                Date d'analyse (ancien)
-                            </option>
-                        </select>
-                    </div>
+                            Mots-clés (élevé)
+                        </option>
+                        <option
+                            value="matches_asc"
+                            :disabled="!triAnalyseDisponible"
+                        >
+                            Mots-clés (faible)
+                        </option>
+                        <option
+                            value="date_analyse_desc"
+                            :disabled="!triAnalyseDisponible"
+                        >
+                            Date d'analyse (récent)
+                        </option>
+                        <option
+                            value="date_analyse_asc"
+                            :disabled="!triAnalyseDisponible"
+                        >
+                            Date d'analyse (ancien)
+                        </option>
+                    </select>
                 </div>
             </div>
             <p v-if="toolbarHint" class="cvs-liste-toolbar__hints text-muted">
@@ -309,7 +285,7 @@ function telechargerZip(ids) {
                                 {{ cv.nom_candidat }}
                             </h3>
                             <p class="cvs-row__email">
-                                {{ cv.email_candidat || "—" }}
+                                {{ cv.email_affichage || cv.email_candidat || "—" }}
                             </p>
                         </div>
                         <span :class="['badge', badgeClassFromCv(cv)]">

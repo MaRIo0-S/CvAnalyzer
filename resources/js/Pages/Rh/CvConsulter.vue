@@ -148,7 +148,7 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
             <dl class="cv-detail-grid">
                 <div class="cv-detail-grid__item">
                     <dt>E-mail</dt>
-                    <dd>{{ cv.email_candidat || "—" }}</dd>
+                    <dd>{{ cv.email_affichage || cv.email_candidat || "—" }}</dd>
                 </div>
                 <div class="cv-detail-grid__item">
                     <dt>Date de dépôt</dt>

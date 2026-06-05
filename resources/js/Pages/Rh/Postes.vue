@@ -7,6 +7,7 @@ const props = defineProps({
     postes: Array,
     entreprise: Object,
     rhColleguesCount: { type: Number, default: 1 },
+    peutModifierEntreprise: { type: Boolean, default: false },
 });
 
 const form = useForm({
@@ -60,14 +61,21 @@ function supprimerPoste(poste) {
             </p>
         </div>
 
-        <div class="card">
+        <div v-if="entreprise" class="card">
             <h2 class="card__title card__title--sm">
                 Présentation de l'entreprise
             </h2>
-            <p class="card__lead">
+            <p v-if="!peutModifierEntreprise" class="card__lead">
+                Lecture seule — seul le gérant modifie ce texte (back-office
+                gérant).
+            </p>
+            <p v-else class="card__lead">
                 Les candidats lisent ce texte avant de choisir un poste.
             </p>
-            <div v-if="rhColleguesCount > 1" class="hint-box">
+            <div
+                v-if="peutModifierEntreprise && rhColleguesCount > 1"
+                class="hint-box"
+            >
                 <strong>Description partagée</strong>
                 <p style="margin: 0.35rem 0 0">
                     {{ rhColleguesCount }} comptes RH sont rattachés à cette
@@ -85,13 +93,16 @@ function supprimerPoste(poste) {
                     </template>
                 </p>
             </div>
-            <form @submit.prevent="entrepriseForm.put('/rh/entreprise')">
+            <form
+                v-if="peutModifierEntreprise"
+                @submit.prevent="entrepriseForm.put('/rh/entreprise')"
+            >
                 <div class="form-group">
                     <label>Description de l'entreprise</label>
                     <textarea
                         v-model="entrepriseForm.description"
                         rows="5"
-                        placeholder="Activité, valeurs, lieu de travail…"
+                        placeholder="Décrivez l'activité, les valeurs ou le lieu de travail…"
                     />
                 </div>
                 <button
@@ -102,6 +113,12 @@ function supprimerPoste(poste) {
                     Enregistrer
                 </button>
             </form>
+            <p
+                v-else
+                style="white-space: pre-wrap; margin: 0"
+            >
+                {{ entreprise.description || "—" }}
+            </p>
         </div>
 
         <div class="card">

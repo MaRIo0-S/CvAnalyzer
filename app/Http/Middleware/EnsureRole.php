@@ -20,7 +20,7 @@ class EnsureRole
         $allowed = array_map(fn (string $r) => Role::from($r), $roles);
 
         if (! in_array($user->role, $allowed, true)) {
-            abort(403, 'Accès non autorisé.');
+            abort(403, 'Accès non autorisé pour cette zone.');
         }
 
         return $next($request);

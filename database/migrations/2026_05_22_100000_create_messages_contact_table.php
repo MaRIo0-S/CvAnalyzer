@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('nom', 120);
             $table->string('email');
+            $table->string('telephone', 30)->nullable();
             $table->string('entreprise', 150);
             $table->text('message');
             $table->boolean('lu')->default(false);

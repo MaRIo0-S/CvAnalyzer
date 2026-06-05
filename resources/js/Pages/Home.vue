@@ -10,10 +10,12 @@ const props = defineProps({
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth?.user);
+const candidatureEnCours = computed(() => page.props.candidatureEnCours);
 
 const contactForm = useForm({
     nom: "",
     email: "",
+    telephone: "",
     entreprise: "",
     message: "",
 });
@@ -186,7 +188,15 @@ function toggleFaqRh(index) {
                             </p>
                             <div v-if="isGuest" class="hero__actions">
                                 <Link
-                                    href="/deposer"
+                                    v-if="candidatureEnCours"
+                                    :href="candidatureEnCours.url"
+                                    class="btn btn--cta btn--lg"
+                                >
+                                    Modifier mon CV
+                                </Link>
+                                <Link
+                                    v-else
+                                    href="/offres"
                                     class="btn btn--cta btn--lg"
                                 >
                                     Déposer mon CV
@@ -366,10 +376,9 @@ function toggleFaqRh(index) {
                         <div class="who-card">
                             <div class="who-card__header">
                                 <div
-                                    class="who-card__avatar who-card__avatar--indigo"
-                                >
-                                    👤
-                                </div>
+                                    class="who-card__avatar who-card__avatar--indigo who-card__avatar--guest"
+                                    aria-hidden="true"
+                                ></div>
                                 <div>
                                     <h3>Sans inscription</h3>
                                     <span
@@ -397,7 +406,7 @@ function toggleFaqRh(index) {
                             </ul>
                             <Link
                                 v-if="isGuest"
-                                href="/deposer"
+                                href="/offres"
                                 class="btn btn--secondary btn--block"
                                 style="margin-top: 1rem"
                             >
@@ -408,10 +417,9 @@ function toggleFaqRh(index) {
                             <div class="who-card__recommended">Recommandé</div>
                             <div class="who-card__header">
                                 <div
-                                    class="who-card__avatar who-card__avatar--cyan"
-                                >
-                                    ✅
-                                </div>
+                                    class="who-card__avatar who-card__avatar--cyan who-card__avatar--account"
+                                    aria-hidden="true"
+                                ></div>
                                 <div>
                                     <h3>Avec compte</h3>
                                     <span
@@ -666,7 +674,7 @@ function toggleFaqRh(index) {
                                     type="text"
                                     required
                                     autocomplete="name"
-                                    placeholder="Jean Dupont"
+                                    placeholder="Saisissez votre nom complet…"
                                 />
                             </div>
                             <div class="form-group">
@@ -677,20 +685,33 @@ function toggleFaqRh(index) {
                                     type="email"
                                     required
                                     autocomplete="email"
-                                    placeholder="vous@entreprise.com"
+                                    placeholder="Saisissez votre adresse e-mail…"
                                 />
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="contact-entreprise">Entreprise</label>
-                            <input
-                                id="contact-entreprise"
-                                v-model="contactForm.entreprise"
-                                type="text"
-                                required
-                                autocomplete="organization"
-                                placeholder="Nom de votre société"
-                            />
+                        <div class="landing-contact-form__row">
+                            <div class="form-group">
+                                <label for="contact-telephone">Téléphone</label>
+                                <input
+                                    id="contact-telephone"
+                                    v-model="contactForm.telephone"
+                                    type="tel"
+                                    required
+                                    autocomplete="tel"
+                                    placeholder="Saisissez votre numéro de téléphone…"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="contact-entreprise">Entreprise</label>
+                                <input
+                                    id="contact-entreprise"
+                                    v-model="contactForm.entreprise"
+                                    type="text"
+                                    required
+                                    autocomplete="organization"
+                                    placeholder="Saisissez le nom de votre entreprise…"
+                                />
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="contact-message">Message</label>
@@ -699,7 +720,7 @@ function toggleFaqRh(index) {
                                 v-model="contactForm.message"
                                 required
                                 rows="5"
-                                placeholder="Décrivez votre besoin"
+                                placeholder="Décrivez votre besoin ou votre question…"
                             />
                         </div>
                         <button
@@ -725,7 +746,7 @@ function toggleFaqRh(index) {
                         suivre chaque étape de votre candidature.
                     </p>
                     <div class="landing-cta__actions">
-                        <Link href="/deposer" class="btn btn--cta btn--lg"
+                        <Link href="/offres" class="btn btn--cta btn--lg"
                             >Déposer mon CV</Link
                         >
                         <Link
@@ -745,7 +766,7 @@ function toggleFaqRh(index) {
                         <span>CV Analyzer</span>
                     </Link>
                     <nav class="landing-footer__links">
-                        <Link href="/deposer">Déposer un CV</Link>
+                        <Link href="/offres">Voir les offres</Link>
                         <a href="#entreprises">Entreprises</a>
                         <a href="#contact">Contact</a>
                         <Link href="/inscription">S'inscrire</Link>

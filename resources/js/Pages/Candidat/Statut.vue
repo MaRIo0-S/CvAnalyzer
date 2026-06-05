@@ -21,8 +21,8 @@ defineProps({
 
         <div v-if="!cv" class="card">
             <p class="text-muted">Aucun CV déposé pour le moment.</p>
-            <Link href="/deposer" class="btn btn--primary" style="margin-top: 1rem">
-                Déposer un CV
+            <Link href="/offres" class="btn btn--primary" style="margin-top: 1rem">
+                Parcourir les offres
             </Link>
         </div>
 
@@ -39,7 +39,7 @@ defineProps({
                 <li v-if="cv.peut_modifier">
                     <strong>Modification possible jusqu'au :</strong>
                     {{ cv.modifiable_jusqu }} —
-                    <Link href="/deposer">modifier sur la page Déposer un CV</Link>
+                    <Link href="/deposer">modifier votre dossier</Link>
                 </li>
             </ul>
         </div>

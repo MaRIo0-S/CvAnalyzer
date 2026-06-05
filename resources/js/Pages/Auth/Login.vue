@@ -31,6 +31,7 @@ const form = useForm({
                             type="email"
                             required
                             autocomplete="email"
+                            placeholder="Saisissez votre adresse e-mail…"
                         />
                     </div>
                     <PasswordInput
@@ -38,6 +39,7 @@ const form = useForm({
                         label="Mot de passe"
                         input-id="login-password"
                         autocomplete="current-password"
+                        placeholder="Saisissez votre mot de passe…"
                         required
                     />
                     <label class="form-check">

@@ -210,7 +210,7 @@ function annulerAnalyse() {
                         <input
                             v-model="recherche"
                             type="search"
-                            placeholder="Nom ou e-mail…"
+                            placeholder="Saisissez un nom ou un e-mail…"
                         />
                     </div>
                     <div class="form-group cvs-liste-toolbar__field">
@@ -218,7 +218,7 @@ function annulerAnalyse() {
                         <input
                             v-model="filtreMotCle"
                             type="search"
-                            placeholder="Ex. Laravel, vue…"
+                            placeholder="Saisissez un mot-clé (ex. Laravel, Vue)…"
                         />
                     </div>
                 </div>
@@ -242,51 +242,59 @@ function annulerAnalyse() {
                 >
                     <div class="form-group cvs-liste-toolbar__field">
                         <label>Poste</label>
-                    <select v-model="filtrePoste">
-                        <option value="">— Tous les postes —</option>
-                        <option v-for="p in postes" :key="p.id" :value="p.id">
-                            {{ p.titre }}
-                        </option>
-                    </select>
-                </div>
-                <div class="form-group cvs-liste-toolbar__field">
-                    <label>Statut affiché</label>
-                    <select v-model="filtreStatut">
-                        <option value="">— Tous —</option>
-                        <option value="en_cours_analyse">
-                            En cours d'analyse
-                        </option>
-                        <option value="valide">
-                            Validé (à confirmer inclus)
-                        </option>
-                        <option value="non_valide">
-                            Refusé (à confirmer inclus)
-                        </option>
-                    </select>
-                </div>
-                <div class="form-group cvs-liste-toolbar__field">
-                    <label>Trier par</label>
-                    <select
-                        v-model="tri"
-                        class="cvs-liste-toolbar__select--wide"
-                    >
-                        <option value="matches_desc">Mots-clés (élevé)</option>
-                        <option value="matches_asc">Mots-clés (faible)</option>
-                        <option value="score_desc">Score % (élevé)</option>
-                        <option value="score_asc">Score % (faible)</option>
-                        <option value="date_analyse_desc">
-                            Date d'analyse (récent)
-                        </option>
-                        <option value="date_analyse_asc">
-                            Date d'analyse (ancien)
-                        </option>
-                        <option value="statut">Statut</option>
-                        <option value="date_depot_desc">
-                            Date de dépôt (récent)
-                        </option>
-                        <option value="date_depot_asc">
-                            Date de dépôt (ancien)
-                        </option>
+                        <select v-model="filtrePoste">
+                            <option value="">— Tous les postes —</option>
+                            <option
+                                v-for="p in postes"
+                                :key="p.id"
+                                :value="p.id"
+                            >
+                                {{ p.titre }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group cvs-liste-toolbar__field">
+                        <label>Statut affiché</label>
+                        <select v-model="filtreStatut">
+                            <option value="">— Tous —</option>
+                            <option value="en_cours_analyse">
+                                En cours d'analyse
+                            </option>
+                            <option value="valide">
+                                Validé (à confirmer inclus)
+                            </option>
+                            <option value="non_valide">
+                                Refusé (à confirmer inclus)
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group cvs-liste-toolbar__field">
+                        <label>Trier par</label>
+                        <select
+                            v-model="tri"
+                            class="cvs-liste-toolbar__select--wide"
+                        >
+                            <option value="matches_desc">
+                                Mots-clés (élevé)
+                            </option>
+                            <option value="matches_asc">
+                                Mots-clés (faible)
+                            </option>
+                            <option value="score_desc">Score % (élevé)</option>
+                            <option value="score_asc">Score % (faible)</option>
+                            <option value="date_analyse_desc">
+                                Date d'analyse (récent)
+                            </option>
+                            <option value="date_analyse_asc">
+                                Date d'analyse (ancien)
+                            </option>
+                            <option value="statut">Statut</option>
+                            <option value="date_depot_desc">
+                                Date de dépôt (récent)
+                            </option>
+                            <option value="date_depot_asc">
+                                Date de dépôt (ancien)
+                            </option>
                         </select>
                     </div>
                 </div>

@@ -11,13 +11,28 @@ const props = defineProps({
     cvModifiable: Object,
     isLoggedIn: Boolean,
     userDefaults: Object,
+    prefill: Object,
+    champsVerrouilles: { type: Boolean, default: false },
+    pageMode: { type: String, default: "deposit" },
 });
+
+const pageTitle = computed(() =>
+    props.cvModifiable || props.pageMode === "modify"
+        ? "Modifier mon CV"
+        : "Déposer un CV"
+);
+
+const pageIntro = computed(() =>
+    props.cvModifiable || props.pageMode === "modify"
+        ? "Mettez à jour votre dossier pendant la période de modification (24 h). Pour changer de poste, consultez une autre offre puis revenez ici."
+        : "Consultez l'entreprise et le poste, puis envoyez votre candidature."
+);
 
 const form = useForm({
     nom_candidat: props.userDefaults?.nom_candidat ?? "",
     email_candidat: props.userDefaults?.email_candidat ?? "",
-    entreprise_id: "",
-    poste_id: "",
+    entreprise_id: props.prefill?.entreprise_id ?? "",
+    poste_id: props.prefill?.poste_id ?? "",
     fichier: null,
 });
 
@@ -96,7 +111,9 @@ watch(
 watch(
     () => form.entreprise_id,
     () => {
-        form.poste_id = "";
+        if (!props.champsVerrouilles) {
+            form.poste_id = "";
+        }
     }
 );
 
@@ -146,13 +163,14 @@ function onModifyFile(event) {
 
 <template>
     <AppLayout>
+        <p v-if="cvModifiable" class="offres-back-link">
+            <Link href="/offres">← Autres offres</Link>
+        </p>
+
         <div class="page-header">
             <p class="page-header__label">Candidat</p>
-            <h1>Déposer un CV</h1>
-            <p>
-                Consultez l'entreprise et le poste, puis envoyez votre
-                candidature sur cette même page.
-            </p>
+            <h1>{{ pageTitle }}</h1>
+            <p>{{ pageIntro }}</p>
         </div>
 
         <div class="hint-box">
@@ -168,15 +186,16 @@ function onModifyFile(event) {
                     >) : suivi du statut + e-mails automatiques.
                 </li>
                 <li>
-                    <strong>Sans compte</strong> : pas de suivi en ligne ni
-                    d'e-mail automatique.
+                    <strong>Sans compte</strong> : pas de suivi en ligne ; un
+                    e-mail de confirmation est envoyé si vous indiquez une
+                    adresse valide.
                 </li>
             </ul>
         </div>
 
         <div v-if="cvModifiable" class="modify-panel">
             <h3>
-                Modifier ma candidature (dossier n°{{ cvModifiable.reference }})
+                Modifier ma candidature (dossier n°{{ cvModifiable.numero_dossier }})
             </h3>
             <p>
                 Modifiable jusqu'au
@@ -192,7 +211,7 @@ function onModifyFile(event) {
                             v-model="modifyForm.entreprise_id"
                             :items="entrepriseItems"
                             label="Rechercher une entreprise"
-                            placeholder="Saisir le nom de l'entreprise…"
+                            placeholder="Saisissez ou sélectionnez une entreprise…"
                         />
                         <div
                             v-if="selectedEntrepriseModify"
@@ -217,7 +236,7 @@ function onModifyFile(event) {
                             v-model="modifyForm.poste_id"
                             :items="posteItemsModify"
                             label="Rechercher un poste"
-                            placeholder="Saisir le titre du poste…"
+                            placeholder="Saisissez ou sélectionnez un poste…"
                             :disabled="!modifyForm.entreprise_id"
                             empty-text="Choisissez d'abord une entreprise."
                         />
@@ -280,55 +299,28 @@ function onModifyFile(event) {
         </div>
 
         <div v-if="!cvModifiable" class="depot-steps">
-            <section class="depot-step card">
-                <h2 class="card__title card__title--sm">1. Choisir l'entreprise</h2>
+            <section v-if="champsVerrouilles" class="depot-step card">
+                <h2 class="card__title card__title--sm">Offre sélectionnée</h2>
                 <p class="card__lead">
-                    Recherchez et sélectionnez l'entreprise qui recrute.
+                    <Link href="/offres">← Autres offres</Link>
                 </p>
-                <SearchSelect
-                    v-model="form.entreprise_id"
-                    :items="entrepriseItems"
-                    label="Entreprise"
-                    placeholder="Saisir le nom de l'entreprise…"
-                />
-                <div v-if="selectedEntreprise" class="info-panel">
-                    <h3>{{ selectedEntreprise.nom }}</h3>
-                    <p
-                        v-if="selectedEntreprise.description"
-                        class="info-panel__text"
-                    >
-                        {{ selectedEntreprise.description }}
-                    </p>
-                    <p v-else class="info-panel__muted">
-                        Le recruteur n'a pas encore publié de présentation pour
-                        cette entreprise.
-                    </p>
+                <div class="info-panel">
+                    <p class="text-muted">{{ prefill?.entreprise_nom }}</p>
+                    <h3>{{ prefill?.poste_titre || selectedPoste?.titre }}</h3>
                 </div>
             </section>
 
-            <section class="depot-step card">
-                <h2 class="card__title card__title--sm">2. Choisir le poste</h2>
-                <p class="card__lead">
-                    Les postes listés appartiennent à l'entreprise sélectionnée.
-                </p>
-                <SearchSelect
-                    v-model="form.poste_id"
-                    :items="posteItems"
-                    label="Poste"
-                    placeholder="Saisir le titre du poste…"
-                    :disabled="!form.entreprise_id"
-                    empty-text="Sélectionnez d'abord une entreprise."
-                />
-                <div v-if="selectedPoste" class="info-panel">
-                    <h3>{{ selectedPoste.titre }}</h3>
-                    <p v-if="selectedPoste.description" class="info-panel__text">
-                        {{ selectedPoste.description }}
+            <template v-else>
+                <section class="depot-step card">
+                    <h2 class="card__title card__title--sm">
+                        1. Choisir l'entreprise
+                    </h2>
+                    <p class="card__lead">
+                        <Link href="/offres">Parcourir les offres</Link> pour
+                        choisir un poste.
                     </p>
-                    <p v-else class="info-panel__muted">
-                        Aucune description détaillée pour ce poste.
-                    </p>
-                </div>
-            </section>
+                </section>
+            </template>
 
             <section v-if="canShowDepotForm" class="depot-step card">
                 <h2 class="card__title card__title--sm">

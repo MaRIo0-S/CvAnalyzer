@@ -53,7 +53,14 @@ export function trierCvs(a, b, tri, { nullSafeScores = false } = {}) {
 
 export function filtrerCvs(
     list,
-    { recherche, filtrePoste, filtreStatut, filtreMotCle, filtreModification }
+    {
+        recherche,
+        filtrePoste,
+        filtreStatut,
+        filtreMotCle,
+        filtreModification,
+        filtreImportRh,
+    }
 ) {
     let out = list || [];
     const q = (recherche || "").trim().toLowerCase();
@@ -76,6 +83,11 @@ export function filtrerCvs(
         out = out.filter((cv) => cv.modifiable_par_candidat === true);
     } else if (filtreModification === "pret_premiere_analyse") {
         out = out.filter((cv) => cv.pret_premiere_analyse === true);
+    }
+    if (filtreImportRh === "rh") {
+        out = out.filter((cv) => cv.importe_par_rh === true);
+    } else if (filtreImportRh === "candidat") {
+        out = out.filter((cv) => !cv.importe_par_rh);
     }
     const mot = (filtreMotCle || "").trim().toLowerCase();
     if (mot) {

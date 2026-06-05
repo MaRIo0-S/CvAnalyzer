@@ -24,19 +24,21 @@ class StatutCandidatureMail extends Mailable
 
     public static function envoyer(Cv $cv, StatutCv $statut): bool
     {
-        if (! $cv->user_id || ! filled($cv->email_candidat)) {
+        if (! filled($cv->email_candidat)) {
             return false;
         }
 
         $cv->loadMissing(['poste', 'entreprise']);
 
         try {
-            Notification::create([
-                'cv_id' => $cv->id,
-                'user_id' => $cv->user_id,
-                'message' => self::messageCourt($statut),
-                'statut_au_moment' => $statut->value,
-            ]);
+            if ($cv->user_id) {
+                Notification::create([
+                    'cv_id' => $cv->id,
+                    'user_id' => $cv->user_id,
+                    'message' => self::messageCourt($statut),
+                    'statut_au_moment' => $statut->value,
+                ]);
+            }
 
             Mail::to($cv->email_candidat)->send(new self($cv, $statut));
 

@@ -31,8 +31,10 @@ class PosteController extends Controller
                 'description_updated_at' => $entreprise->description_updated_at?->format('d/m/Y à H:i'),
                 'description_updated_by' => $entreprise->descriptionUpdatedBy?->name,
             ] : null,
+            'peutModifierEntreprise' => $request->user()->isSuperAdmin(),
             'rhColleguesCount' => User::where('role', Role::SousAdmin)
                 ->where('entreprise_id', $entrepriseId)
+                ->where('est_actif', true)
                 ->count(),
         ]);
     }
@@ -64,6 +66,8 @@ class PosteController extends Controller
 
     public function updateEntreprise(Request $request)
     {
+        abort(403, 'Seul le gérant peut modifier la description de l\'entreprise.');
+
         $entreprise = $request->user()->entreprise;
         if (! $entreprise) {
             return back()->withErrors(['description' => 'Aucune entreprise rattachée.']);

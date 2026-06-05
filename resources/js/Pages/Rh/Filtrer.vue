@@ -1,7 +1,8 @@
 <script setup>
 import { Link, useForm } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
+import SearchSelect from "@/Components/SearchSelect.vue";
 import { useToastStore } from "@/stores/toast";
 
 const props = defineProps({
@@ -21,6 +22,10 @@ const form = useForm({
 });
 
 const annulerForm = useForm({});
+
+const posteItems = computed(() =>
+    (props.postes || []).map((p) => ({ id: p.id, label: p.titre }))
+);
 
 function annulerAnalyseEnCours() {
     if (
@@ -144,7 +149,7 @@ function lancerFiltrage() {
                 <input
                     v-model="inputMot"
                     type="text"
-                    placeholder="Ex: Laravel, SQL, Python..."
+                    placeholder="Saisissez un mot-clé puis appuyez sur Entrée…"
                     @keyup.enter.prevent="ajouterMot"
                 />
                 <button type="button" class="btn btn--ghost" @click="ajouterMot">
@@ -152,15 +157,12 @@ function lancerFiltrage() {
                 </button>
             </div>
 
-            <div class="form-group">
-                <label>Filtrer par poste (optionnel)</label>
-                <select v-model="form.poste_id">
-                    <option value="">Tous les postes</option>
-                    <option v-for="p in postes" :key="p.id" :value="p.id">
-                        {{ p.titre }}
-                    </option>
-                </select>
-            </div>
+            <SearchSelect
+                v-model="form.poste_id"
+                :items="posteItems"
+                label="Filtrer par poste (optionnel)"
+                placeholder="Saisissez ou sélectionnez un poste…"
+            />
 
             <label class="form-check" style="margin: 1rem 0">
                 <input v-model="form.inclure_non_valides" type="checkbox" />

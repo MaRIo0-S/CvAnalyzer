@@ -24,7 +24,7 @@ const form = useForm({
                 <div class="hint-box">
                     L'inscription sert uniquement au <strong>suivi</strong> et
                     aux <strong>notifications</strong>. Pour postuler, utilisez
-                    <Link href="/deposer">Déposer un CV</Link> : vos coordonnées
+                    <Link href="/offres">Voir les offres</Link> : vos coordonnées
                     y seront enregistrées pour que le recruteur puisse vous
                     contacter.
                 </div>
@@ -32,11 +32,21 @@ const form = useForm({
                 <form @submit.prevent="form.post('/inscription')">
                     <div class="form-group">
                         <label>Nom complet</label>
-                        <input v-model="form.name" type="text" required />
+                        <input
+                            v-model="form.name"
+                            type="text"
+                            required
+                            placeholder="Saisissez votre nom complet…"
+                        />
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input v-model="form.email" type="email" required />
+                        <input
+                            v-model="form.email"
+                            type="email"
+                            required
+                            placeholder="Saisissez votre adresse e-mail…"
+                        />
                     </div>
                     <PasswordInput
                         v-model="form.password"
@@ -53,6 +63,7 @@ const form = useForm({
                         label="Confirmer le mot de passe"
                         input-id="register-password-2"
                         autocomplete="new-password"
+                        placeholder="Confirmez votre mot de passe…"
                         required
                     />
                     <button

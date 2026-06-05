@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Role;
 use App\Models\Notification;
+use App\Support\CandidatureSession;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,6 +36,11 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'candidatNotifications' => fn () => $this->candidatNotifications($request),
+            'candidatureEnCours' => fn () => CandidatureSession::enCours($request),
+            'staffPaths' => [
+                'admin' => '/'.trim(config('cvanalyzer.admin_app_prefix'), '/'),
+                'gerant' => '/'.trim(config('cvanalyzer.gerant_app_prefix'), '/'),
+            ],
         ];
     }
 

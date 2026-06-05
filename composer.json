@@ -10,6 +10,7 @@
         "inertiajs/inertia-laravel": "^3.1",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
+        "openspout/openspout": "^5.7",
         "smalot/pdfparser": "^2.12"
     },
     "require-dev": {

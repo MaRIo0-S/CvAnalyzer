@@ -7,6 +7,7 @@ defineProps({
     autocomplete: { type: String, default: "current-password" },
     required: { type: Boolean, default: false },
     inputId: { type: String, required: true },
+    placeholder: { type: String, default: "" },
 });
 
 defineEmits(["update:modelValue"]);
@@ -24,6 +25,7 @@ const visible = ref(false);
                 :value="modelValue"
                 :autocomplete="autocomplete"
                 :required="required"
+                :placeholder="placeholder"
                 class="password-input__field"
                 @input="
                     $emit('update:modelValue', $event.target.value)

@@ -9,6 +9,7 @@ use App\Http\Controllers\Rh\Concerns\ResolvesRhEntreprise;
 use App\Mail\StatutCandidatureMail;
 use App\Models\Cv;
 use App\Models\Poste;
+use App\Services\ServiceAnalyse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,8 @@ class CvController extends Controller
 {
     use GereSessionAnalyseRh;
     use ResolvesRhEntreprise;
+
+    public function __construct(private ServiceAnalyse $serviceAnalyse) {}
 
     public function index(Request $request)
     {
@@ -280,4 +283,5 @@ class CvController extends Controller
 
         return Storage::disk('public')->download($cv->fichier_url, $nom);
     }
+
 }

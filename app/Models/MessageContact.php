@@ -11,6 +11,7 @@ class MessageContact extends Model
     protected $fillable = [
         'nom',
         'email',
+        'telephone',
         'entreprise',
         'message',
         'lu',

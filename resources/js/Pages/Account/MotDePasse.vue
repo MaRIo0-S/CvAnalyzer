@@ -2,14 +2,9 @@
 import { Link, useForm, usePage } from "@inertiajs/vue3";
 import { computed } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
-
-const user = computed(() => usePage().props.auth?.user);
-const aProfil = computed(
-    () =>
-        user.value?.role === "candidat" ||
-        user.value?.role === "sous_admin"
-);
 import PasswordInput from "@/Components/PasswordInput.vue";
+
+const isCandidat = computed(() => usePage().props.auth?.user?.role === "candidat");
 
 const form = useForm({
     current_password: "",
@@ -45,6 +40,7 @@ function submit() {
                     label="Mot de passe actuel"
                     input-id="pwd-current"
                     autocomplete="current-password"
+                    placeholder="Saisissez votre mot de passe actuel…"
                     required
                 />
                 <PasswordInput
@@ -52,6 +48,7 @@ function submit() {
                     label="Nouveau mot de passe"
                     input-id="pwd-new"
                     autocomplete="new-password"
+                    placeholder="Choisissez un nouveau mot de passe…"
                     required
                 />
                 <PasswordInput
@@ -59,20 +56,25 @@ function submit() {
                     label="Confirmer le mot de passe"
                     input-id="pwd-new-2"
                     autocomplete="new-password"
+                    placeholder="Confirmez le nouveau mot de passe…"
                     required
                 />
-                <button
-                    type="submit"
-                    class="btn btn--primary"
-                    style="margin-top: 0.5rem"
-                    :disabled="form.processing"
-                >
-                    Enregistrer
-                </button>
+                <div class="form-actions" style="margin-top: 0.5rem">
+                    <button
+                        type="submit"
+                        class="btn btn--primary"
+                        :disabled="form.processing"
+                    >
+                        Enregistrer
+                    </button>
+                    <Link
+                        v-if="isCandidat"
+                        href="/compte"
+                        class="btn btn--ghost"
+                        >← Retour au profil</Link
+                    >
+                </div>
             </form>
-            <p v-if="aProfil" class="auth-card__footer" style="margin-top: 1.25rem">
-                <Link href="/compte">Retour au profil</Link>
-            </p>
         </div>
     </AppLayout>
 </template>

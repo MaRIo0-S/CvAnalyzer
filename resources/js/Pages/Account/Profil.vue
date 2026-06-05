@@ -54,6 +54,7 @@ function submit() {
                         type="text"
                         required
                         :disabled="!peutModifierNom"
+                        placeholder="Saisissez votre nom complet…"
                     />
                 </div>
 
@@ -65,6 +66,7 @@ function submit() {
                         required
                         autocomplete="email"
                         :disabled="!peutModifierEmail"
+                        placeholder="Saisissez votre adresse e-mail…"
                     />
                 </div>
 

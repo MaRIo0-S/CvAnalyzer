@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-
 class Cv extends Model
 {
     protected $table = 'cvs';
@@ -25,7 +24,13 @@ class Cv extends Model
         'texte_extrait',
         'statut',
         'modifiable_jusqu',
+        'importe_par_rh',
     ];
+
+    public function numeroDossier(): int
+    {
+        return (int) $this->id;
+    }
 
     protected function casts(): array
     {
@@ -34,7 +39,17 @@ class Cv extends Model
             'modifiable_jusqu' => 'datetime',
             'statut' => StatutCv::class,
             'taille_fichier' => 'float',
+            'importe_par_rh' => 'boolean',
         ];
+    }
+
+    public function emailAffichageRh(): string
+    {
+        if ($this->importe_par_rh && ! filled($this->email_candidat)) {
+            return 'Voir le CV pour récupérer l\'e-mail';
+        }
+
+        return $this->email_candidat ?: '—';
     }
 
     public function poste(): BelongsTo
@@ -91,8 +106,6 @@ class Cv extends Model
     }
 
     /**
-     * Affichage RH : lot provisoire = « en cours d'analyse » sans changer la BDD.
-     *
      * @return array{statut_affichage: string, statut_label: string}
      */
     public function statutPourAffichageRh(?string $decisionProvisoire, bool $lotProvisoire = false): array
@@ -125,9 +138,12 @@ class Cv extends Model
 
         return [
             'id' => $this->id,
+            'numero_dossier' => $this->numeroDossier(),
             'poste_id' => $this->poste_id,
             'nom_candidat' => $this->nom_candidat ?: 'Candidat #'.$this->id,
             'email_candidat' => $this->email_candidat,
+            'email_affichage' => $this->emailAffichageRh(),
+            'importe_par_rh' => (bool) $this->importe_par_rh,
             'poste' => $this->poste?->titre,
             'statut' => $statut,
             'statut_affichage' => $affichage['statut_affichage'],

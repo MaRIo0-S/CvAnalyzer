@@ -7,6 +7,7 @@ use App\Enums\StatutCv;
 use App\Mail\StatutCandidatureMail;
 use App\Models\Cv;
 use App\Models\Entreprise;
+use App\Models\MessageContact;
 use App\Models\Notification;
 use App\Models\Poste;
 use App\Models\ResultatAnalyse;
@@ -55,36 +56,69 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
+        $gerantTech = User::updateOrCreate(
+            ['email' => 'gerant@techcorp.test'],
+            [
+                'name' => 'Luc Gérant TechCorp',
+                'telephone' => '+33601020304',
+                'password' => $demoPassword,
+                'role' => Role::SuperAdmin,
+                'admin_id' => $admin->id,
+                'entreprise_id' => $techCorp->id,
+                'est_actif' => true,
+            ]
+        );
+
+        $gerantData = User::updateOrCreate(
+            ['email' => 'gerant@datasoft.test'],
+            [
+                'name' => 'Nadia Gérant DataSoft',
+                'telephone' => '+33605060708',
+                'password' => $demoPassword,
+                'role' => Role::SuperAdmin,
+                'admin_id' => $admin->id,
+                'entreprise_id' => $dataSoft->id,
+                'est_actif' => true,
+            ]
+        );
+
         $rhTech = User::updateOrCreate(
             ['email' => 'rh@cvapp.test'],
             [
-                'name' => 'Marie Sub-admin',
+                'name' => 'Marie RH',
+                'telephone' => '+33611111111',
                 'password' => $demoPassword,
                 'role' => Role::SousAdmin,
-                'admin_id' => $admin->id,
+                'super_admin_id' => $gerantTech->id,
+                'admin_id' => null,
                 'entreprise_id' => $techCorp->id,
+                'est_actif' => true,
             ]
         );
 
         User::updateOrCreate(
             ['email' => 'rh2@cvapp.test'],
             [
-                'name' => 'Paul Sub-admin',
+                'name' => 'Paul RH',
+                'telephone' => '+33622222222',
                 'password' => $demoPassword,
                 'role' => Role::SousAdmin,
-                'admin_id' => $admin->id,
+                'super_admin_id' => $gerantTech->id,
                 'entreprise_id' => $techCorp->id,
+                'est_actif' => true,
             ]
         );
 
         $rhData = User::updateOrCreate(
             ['email' => 'rh3@cvapp.test'],
             [
-                'name' => 'Sophie Sub-admin',
+                'name' => 'Sophie RH',
+                'telephone' => '+33633333333',
                 'password' => $demoPassword,
                 'role' => Role::SousAdmin,
-                'admin_id' => $admin->id,
+                'super_admin_id' => $gerantData->id,
                 'entreprise_id' => $dataSoft->id,
+                'est_actif' => true,
             ]
         );
 
@@ -280,9 +314,46 @@ class DemoDataSeeder extends Seeder
                     'modifiable_jusqu' => ($data['statut'] ?? StatutCv::CvRecu) === StatutCv::CvRecu
                         ? ($data['date_depot'] ?? now())->copy()->addDay()
                         : ($data['date_depot'] ?? now())->copy()->subHour(),
+                    'importe_par_rh' => $data['importe_par_rh'] ?? false,
                 ]
             );
         }
+
+        if (! Cv::where('importe_par_rh', true)->where('poste_id', $posteLaravel->id)->exists()) {
+            Cv::create([
+                'poste_id' => $posteLaravel->id,
+                'entreprise_id' => $techCorp->id,
+                'user_id' => null,
+                'nom_candidat' => '',
+                'email_candidat' => '',
+                'fichier_url' => $placeholderPdf,
+                'taille_fichier' => 0.15,
+                'format_fichier' => 'pdf',
+                'texte_extrait' => 'CV importé par RH — coordonnées à extraire du fichier.',
+                'statut' => StatutCv::CvRecu,
+                'date_depot' => now()->subHours(2),
+                'modifiable_jusqu' => null,
+                'importe_par_rh' => true,
+            ]);
+        }
+
+        MessageContact::query()->delete();
+        MessageContact::create([
+            'nom' => 'Claire Dupont',
+            'email' => 'claire.dupont@acme.test',
+            'telephone' => '0611223344',
+            'entreprise' => 'Acme SA',
+            'message' => 'Bonjour, nous souhaitons une démo pour 15 postes ouverts.',
+            'lu' => false,
+        ]);
+        MessageContact::create([
+            'nom' => 'Marc Leroy',
+            'email' => 'marc.leroy@startup.test',
+            'telephone' => '0699887766',
+            'entreprise' => 'StartupLab',
+            'message' => 'Question sur l\'hébergement et la sécurité des données candidats.',
+            'lu' => true,
+        ]);
 
         ResultatAnalyse::query()
             ->whereHas('cv', fn ($q) => $q->where('statut', StatutCv::CvRecu))
@@ -312,12 +383,14 @@ class DemoDataSeeder extends Seeder
             }
         }
 
-        $this->command?->info('Données démo créées : '.Cv::count().' CVs, '.Poste::count().' postes.');
-        $this->command?->info('Comptes démo (tous) : mot de passe password');
-        $this->command?->info('Admin : admin@cvapp.test — Candidat : candidat@cvapp.test');
-        $this->command?->info('Notifications démo (candidat) : non lues, recréées à chaque seed');
-        $this->command?->info('Sub-admin TechCorp : rh@cvapp.test / rh2@cvapp.test');
-        $this->command?->info('Sub-admin DataSoft : rh3@cvapp.test');
-        $this->command?->info('Test 30 j (TechCorp) : salma.recente@email.test (< 30 j, non validé) / mehdi.ancien@email.test (> 30 j, non éligible)');
+        $this->command?->info('Données démo créées : '.Cv::count().' CVs, '.Poste::count().' postes, '.MessageContact::count().' messages contact.');
+        $this->command?->info('Mot de passe démo pour tous les comptes : password');
+        $this->command?->info('Admin plateforme : admin@cvapp.test → '.config('cvanalyzer.admin_login_path', 'acces-admin-plateforme'));
+        $this->command?->info('Gérant TechCorp : gerant@techcorp.test → '.config('cvanalyzer.gerant_login_path', 'acces-gerant-entreprise'));
+        $this->command?->info('Gérant DataSoft : gerant@datasoft.test');
+        $this->command?->info('RH TechCorp : rh@cvapp.test / rh2@cvapp.test');
+        $this->command?->info('RH DataSoft : rh3@cvapp.test');
+        $this->command?->info('Candidat : candidat@cvapp.test → /login');
+        $this->command?->info('CV importé RH (sans e-mail) : dossier TechCorp / Développeur Laravel');
     }
 }

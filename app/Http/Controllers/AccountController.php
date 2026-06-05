@@ -12,7 +12,13 @@ class AccountController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, [Role::Candidat, Role::SousAdmin], true)) {
+        if ($user->role === Role::SousAdmin) {
+            return redirect()
+                ->route('rh.dashboard')
+                ->with('info', 'Vos coordonnées sont gérées par le gérant de votre entreprise.');
+        }
+
+        if ($user->role !== Role::Candidat) {
             return redirect()->route('account.password.edit');
         }
 
@@ -21,7 +27,7 @@ class AccountController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role->value,
-                'entreprise' => $user->entreprise?->nom,
+                'entreprise' => null,
             ],
             'peutModifierEmail' => true,
             'peutModifierNom' => true,
@@ -32,7 +38,11 @@ class AccountController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, [Role::Candidat, Role::SousAdmin], true)) {
+        if ($user->role === Role::SousAdmin) {
+            abort(403, 'Contactez votre gérant pour modifier vos informations.');
+        }
+
+        if ($user->role !== Role::Candidat) {
             abort(403, 'Modification du profil non disponible pour ce type de compte.');
         }
 

@@ -17,7 +17,6 @@ php artisan serve
 ```
 
 Comptes de démonstration : voir `database/seeders/DemoDataSeeder.php` (mot de passe `password`).
-
 | Rôle | Email | Connexion |
 |------|-------|-----------|
 | Admin plateforme | `admin@cvapp.test` | URL secrète `ADMIN_LOGIN_PATH` (défaut : `/acces-admin-plateforme`) |

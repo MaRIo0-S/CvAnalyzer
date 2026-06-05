@@ -21,13 +21,13 @@ WORKDIR /app
 
 COPY composer.json composer.lock ./
 
+# --no-scripts : artisan n'existe pas encore dans cette étape (vendor only)
 RUN composer install \
     --no-dev \
     --no-interaction \
     --no-scripts \
     --prefer-dist \
-    --optimize-autoloader \
-    && composer dump-autoload --optimize --no-dev --no-interaction
+    --optimize-autoloader
 
 # --- Application image ---
 FROM php:8.3-fpm-bookworm AS app

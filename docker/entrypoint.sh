@@ -15,20 +15,15 @@ if [ -z "$APP_KEY" ]; then
     exit 1
 fi
 
-# 1. ENLEVER LE CACHE DES FICHIERS DE CONFIG (Pas besoin de BDD pour ça)
-php artisan config:clear --no-ansi
+php artisan config:clear --no-ansi 2>/dev/null || true
 
-# 2. Liens et packages
 php artisan storage:link --force --no-ansi 2>/dev/null || true
+
 php artisan package:discover --ansi
 
-# 3. LES MIGRATIONS D'ABORD (Pour s'assurer que la BDD et la table cache existent)
 php artisan migrate --force --no-ansi
 
-# 4. LE NETTOYAGE DU CACHE APRÈS (Si ça échoue, on ne bloque pas le déploiement)
-php artisan cache:clear --no-ansi || true
-
-# 5. On met en cache uniquement les routes et les vues. On NE CACHE PAS la config.
+php artisan config:cache --no-ansi
 php artisan route:cache --no-ansi
 php artisan view:cache --no-ansi
 

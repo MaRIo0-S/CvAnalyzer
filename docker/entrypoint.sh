@@ -15,19 +15,20 @@ if [ -z "$APP_KEY" ]; then
     exit 1
 fi
 
-# 1. ON FORCE LE NETTOYAGE COMPLET DU CACHE AVANT TOUT
+# 1. ENLEVER LE CACHE DES FICHIERS DE CONFIG (Pas besoin de BDD pour ça)
 php artisan config:clear --no-ansi
-php artisan cache:clear --no-ansi
 
 # 2. Liens et packages
 php artisan storage:link --force --no-ansi 2>/dev/null || true
 php artisan package:discover --ansi
 
-# 3. Les migrations vont maintenant lire DATABASE_URL en direct sans cache bloquant
+# 3. LES MIGRATIONS D'ABORD (Pour s'assurer que la BDD et la table cache existent)
 php artisan migrate --force --no-ansi
 
-# 4. On cache UNIQUEMENT les routes et les vues. 
-# ON NE CACHE PAS LA CONFIGURATION (config:cache) pour laisser Railway injecter ses variables au runtime.
+# 4. LE NETTOYAGE DU CACHE APRÈS (Si ça échoue, on ne bloque pas le déploiement)
+php artisan cache:clear --no-ansi || true
+
+# 5. On met en cache uniquement les routes et les vues. On NE CACHE PAS la config.
 php artisan route:cache --no-ansi
 php artisan view:cache --no-ansi
 

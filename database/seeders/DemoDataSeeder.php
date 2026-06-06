@@ -183,6 +183,8 @@ class DemoDataSeeder extends Seeder
 
         $candidat = User::where('email', 'candidat@cvapp.test')->first();
 
+        $graceHours = (int) config('cv.grace_period_hours', 24);
+
         $cvsDemo = [
             [
                 'nom' => 'Amine Benali',
@@ -295,6 +297,14 @@ class DemoDataSeeder extends Seeder
 
         foreach ($cvsDemo as $i => $data) {
             $fichierUrl = $this->publierPdfDemo($data['email'], $pdfSource);
+            $statut = $data['statut'] ?? StatutCv::CvRecu;
+            $dateDepot = $data['date_depot'] ?? now()->subDays(5 + $i);
+
+            if ($statut === StatutCv::CvRecu) {
+                $modifiableJusqu = $dateDepot->copy()->addHours($graceHours);
+            } else {
+                $modifiableJusqu = $dateDepot->copy()->subHour();
+            }
 
             Cv::updateOrCreate(
                 ['email_candidat' => $data['email'], 'poste_id' => $data['poste_id']],
@@ -306,16 +316,15 @@ class DemoDataSeeder extends Seeder
                     'taille_fichier' => round(strlen($pdfSource) / 1024 / 1024, 2) ?: 0.15,
                     'format_fichier' => 'pdf',
                     'texte_extrait' => $data['texte'],
-                    'statut' => $data['statut'],
-                    'date_depot' => $data['date_depot'] ?? now()->subDays(3 + $i),
-                    'modifiable_jusqu' => ($data['statut'] ?? StatutCv::CvRecu) === StatutCv::CvRecu
-                        ? ($data['date_depot'] ?? now())->copy()->addDay()
-                        : ($data['date_depot'] ?? now())->copy()->subHour(),
+                    'statut' => $statut,
+                    'date_depot' => $dateDepot,
+                    'modifiable_jusqu' => $modifiableJusqu,
                     'importe_par_rh' => $data['importe_par_rh'] ?? false,
                 ]
             );
         }
 
+        $importRhDateDepot = now()->subDays(3);
         if (! Cv::where('importe_par_rh', true)->where('poste_id', $posteLaravel->id)->exists()) {
             Cv::create([
                 'poste_id' => $posteLaravel->id,
@@ -328,10 +337,17 @@ class DemoDataSeeder extends Seeder
                 'format_fichier' => 'pdf',
                 'texte_extrait' => 'CV importé par RH — Laravel PHP Vue PostgreSQL API REST Git Docker.',
                 'statut' => StatutCv::CvRecu,
-                'date_depot' => now()->subHours(2),
-                'modifiable_jusqu' => null,
+                'date_depot' => $importRhDateDepot,
+                'modifiable_jusqu' => $importRhDateDepot->copy()->addHours($graceHours),
                 'importe_par_rh' => true,
             ]);
+        } else {
+            Cv::where('importe_par_rh', true)
+                ->where('poste_id', $posteLaravel->id)
+                ->update([
+                    'date_depot' => $importRhDateDepot,
+                    'modifiable_jusqu' => $importRhDateDepot->copy()->addHours($graceHours),
+                ]);
         }
 
         MessageContact::query()->delete();

@@ -64,31 +64,6 @@ class PosteController extends Controller
         return back()->with('success', 'Poste créé pour votre entreprise.');
     }
 
-    public function updateEntreprise(Request $request)
-    {
-        abort(403, 'Seul le gérant peut modifier la description de l\'entreprise.');
-
-        $entreprise = $request->user()->entreprise;
-        if (! $entreprise) {
-            return back()->withErrors(['description' => 'Aucune entreprise rattachée.']);
-        }
-
-        $validated = $request->validate([
-            'description' => ['nullable', 'string', 'max:5000'],
-        ]);
-
-        $entreprise->update([
-            'description' => $validated['description'] ?? null,
-            'description_updated_by' => $request->user()->id,
-            'description_updated_at' => now(),
-        ]);
-
-        return back()->with(
-            'success',
-            'Présentation enregistrée pour toute l\'entreprise « '.$entreprise->nom.' ». Les autres RH de la même société verront ce texte.'
-        );
-    }
-
     public function update(Request $request, Poste $poste)
     {
         if ($poste->user_id !== $request->user()->id

@@ -55,12 +55,6 @@ class User extends Authenticatable
             ->where('role', Role::SousAdmin);
     }
 
-    /** @deprecated Utiliser rhEquipe() */
-    public function sousAdmins(): HasMany
-    {
-        return $this->rhEquipe();
-    }
-
     public function postes(): HasMany
     {
         return $this->hasMany(Poste::class);

@@ -1540,57 +1540,6 @@ a {
     }
 }
 
-.back-office-details {
-    border: 1px solid $border-soft;
-    border-radius: 8px;
-    margin-bottom: 0.75rem;
-    padding: 0.5rem 0.85rem;
-    background: rgba(255, 255, 255, 0.02);
-
-    summary {
-        cursor: pointer;
-        font-size: 0.92rem;
-        color: $text;
-        padding: 0.35rem 0;
-
-        &:hover {
-            color: $indigo-lt;
-        }
-    }
-
-    &__desc {
-        margin: 0.5rem 0 0.75rem;
-        font-size: 0.85rem;
-        color: $text-muted;
-    }
-
-    &__subtitle {
-        margin: 0.75rem 0 0.35rem;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: $text-muted;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-}
-
-.back-office-list {
-    margin: 0 0 0.75rem;
-    padding-left: 1.2rem;
-    font-size: 0.88rem;
-    color: $text;
-}
-
-.link-inline {
-    color: $cyan;
-    text-decoration: none;
-    font-weight: 600;
-
-    &:hover {
-        text-decoration: underline;
-    }
-}
-
 .contact-inbox {
     display: flex;
     flex-direction: column;

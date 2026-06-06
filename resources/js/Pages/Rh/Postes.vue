@@ -2,6 +2,7 @@
 import { router, useForm } from "@inertiajs/vue3";
 import { reactive, watch } from "vue";
 import AppLayout from "@/Layouts/AppLayout.vue";
+import { useStaffPaths } from "@/composables/useStaffPaths";
 
 const props = defineProps({
     postes: Array,
@@ -9,6 +10,8 @@ const props = defineProps({
     rhColleguesCount: { type: Number, default: 1 },
     peutModifierEntreprise: { type: Boolean, default: false },
 });
+
+const paths = useStaffPaths();
 
 const form = useForm({
     titre: "",
@@ -95,7 +98,7 @@ function supprimerPoste(poste) {
             </div>
             <form
                 v-if="peutModifierEntreprise"
-                @submit.prevent="entrepriseForm.put('/rh/entreprise')"
+                @submit.prevent="entrepriseForm.put(paths.gerantEntreprise)"
             >
                 <div class="form-group">
                     <label>Description de l'entreprise</label>

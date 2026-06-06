@@ -6,6 +6,7 @@ import SearchSelect from "@/Components/SearchSelect.vue";
 import { useCvDecision } from "@/composables/useCvDecision";
 import { useToastStore } from "@/stores/toast";
 import { telechargerZipCv } from "@/composables/useZipDownload";
+import { telechargerCv } from "@/composables/useCvDownload";
 import { badgeClassFromCv, filtrerCvs, trierCvs } from "@/utils/cvList";
 
 const props = defineProps({
@@ -103,6 +104,11 @@ function telechargerZip(ids) {
     if (!telechargerZipCv(props.zipUrl, ids)) {
         toast.error("Cochez au moins un CV (ou « Tout sélectionner »).");
     }
+}
+
+function telechargerFichier(cv) {
+    const nom = `cv-${cv.nom_candidat || cv.id}.${cv.format_fichier || "pdf"}`;
+    telechargerCv(cv.download_url, nom);
 }
 </script>
 
@@ -345,13 +351,13 @@ function telechargerZip(ids) {
                 </div>
 
                 <div class="cvs-row__actions">
-                    <a
-                        :href="cv.download_url"
+                    <button
+                        type="button"
                         class="btn btn--secondary btn--sm"
-                        download
+                        @click="telechargerFichier(cv)"
                     >
                         Télécharger
-                    </a>
+                    </button>
                     <Link
                         :href="`/rh/cvs/${cv.id}/consulter`"
                         class="btn btn--primary btn--sm"

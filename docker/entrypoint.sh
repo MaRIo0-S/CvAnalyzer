@@ -19,7 +19,24 @@ fi
 
 php artisan config:clear --no-ansi 2>/dev/null || true
 php artisan storage:link --force --no-ansi 2>/dev/null || true
-mkdir -p storage/app/temp storage/app/public/cvs 2>/dev/null || true
+
+mkdir -p \
+    storage/app/temp \
+    storage/app/public/cvs \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+
+# Volume persistant (ex. storage/app) : droits d'écriture pour php-fpm (www-data)
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
+
+if ! su -s /bin/sh www-data -c 'touch storage/app/public/.write-test && rm storage/app/public/.write-test'; then
+    echo "WARN: www-data cannot write to storage/app/public — CV uploads will fail." >&2
+    chmod -R 777 storage/app/public 2>/dev/null || true
+fi
 
 # Migrations + cache en arrière-plan : Nginx doit répondre vite pour le healthcheck (/up)
 (

@@ -2,6 +2,7 @@
 import { Link, router } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { useCvDecision } from "@/composables/useCvDecision";
+import { telechargerCv } from "@/composables/useCvDownload";
 import { badgeClassFromCv } from "@/utils/cvList";
 
 const props = defineProps({
@@ -39,6 +40,11 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
             router.visit(props.retourUrl);
         },
     });
+
+function telechargerFichier() {
+    const nom = `cv-${props.cv.nom_candidat || props.cv.id}.${props.cv.format_fichier || "pdf"}`;
+    telechargerCv(props.telechargerUrl, nom);
+}
 </script>
 
 <template>
@@ -62,9 +68,13 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
             <Link :href="retourUrl" class="btn btn--ghost">
                 {{ retourLabel }}
             </Link>
-            <a :href="telechargerUrl" class="btn btn--secondary" download>
+            <button
+                type="button"
+                class="btn btn--secondary"
+                @click="telechargerFichier"
+            >
                 Télécharger le CV
-            </a>
+            </button>
             <a
                 v-if="cv.fichier_preview"
                 :href="fichierUrl"

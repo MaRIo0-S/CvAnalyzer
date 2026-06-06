@@ -160,13 +160,21 @@ class GuestCvController extends Controller
 
         $graceHours = (int) config('cv.grace_period_hours', 24);
 
+        $fichierPath = $file->store('cvs', 'public');
+
+        if (! Storage::disk('public')->exists($fichierPath)) {
+            return back()->withErrors([
+                'fichier' => 'Le fichier n\'a pas pu être enregistré sur le serveur. Vérifiez les permissions du dossier storage.',
+            ]);
+        }
+
         $cv = Cv::create([
             'poste_id' => $validated['poste_id'],
             'entreprise_id' => $validated['entreprise_id'],
             'user_id' => $user?->id,
             'nom_candidat' => $validated['nom_candidat'],
             'email_candidat' => $validated['email_candidat'],
-            'fichier_url' => $file->store('cvs', 'public'),
+            'fichier_url' => $fichierPath,
             'taille_fichier' => round($tailleMo, 2),
             'format_fichier' => $extension,
             'statut' => StatutCv::CvRecu,
@@ -253,6 +261,11 @@ class GuestCvController extends Controller
 
             Storage::disk('public')->delete($cv->fichier_url);
             $data['fichier_url'] = $file->store('cvs', 'public');
+            if (! Storage::disk('public')->exists($data['fichier_url'])) {
+                return back()->withErrors([
+                    'fichier' => 'Le fichier n\'a pas pu être enregistré sur le serveur.',
+                ]);
+            }
             $data['taille_fichier'] = round($tailleMo, 2);
             $data['format_fichier'] = $extension;
             $data['texte_extrait'] = null;

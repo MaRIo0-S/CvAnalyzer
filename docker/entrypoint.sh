@@ -24,7 +24,6 @@ php artisan storage:link --force --no-ansi 2>/dev/null || true
 (
     php artisan package:discover --ansi
     php artisan migrate --force --no-ansi
-    php artisan config:cache --no-ansi
     php artisan route:cache --no-ansi
     php artisan view:cache --no-ansi
     echo "Bootstrap terminé (migrations + cache)."

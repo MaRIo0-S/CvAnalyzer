@@ -47,6 +47,9 @@ const form = useForm({
                             required
                             placeholder="Saisissez votre adresse e-mail…"
                         />
+                        <p v-if="form.errors.email" class="form-error">
+                            {{ form.errors.email }}
+                        </p>
                     </div>
                     <PasswordInput
                         v-model="form.password"

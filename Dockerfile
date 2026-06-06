@@ -72,7 +72,7 @@ RUN mkdir -p \
 
 USER root
 
-# Railway injecte $PORT au runtime ; ne pas figer le port ici
+# $PORT est injecté au runtime par la plateforme ; ne pas figer le port ici
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

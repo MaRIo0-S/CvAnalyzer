@@ -13,6 +13,7 @@ use Database\Seeders\DemoDataSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -25,6 +26,24 @@ class SiteFunctionalityTest extends TestCase
         parent::setUp();
         Storage::fake('public');
         $this->seed(DemoDataSeeder::class);
+    }
+
+    public function test_inscription_envoie_code_et_redirige_vers_verification(): void
+    {
+        Mail::fake();
+
+        $this->post(route('register.store'), [
+            'name' => 'Nouveau Candidat',
+            'email' => 'nouveau.candidat@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])
+            ->assertRedirect(route('register.verify'))
+            ->assertSessionHas('register_pending');
+
+        Mail::assertSent(\App\Mail\RegisterCodeMail::class, function ($mail) {
+            return $mail->hasTo('nouveau.candidat@example.com');
+        });
     }
 
     public function test_pages_publiques_accessibles(): void

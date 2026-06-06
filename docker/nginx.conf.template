@@ -1,5 +1,5 @@
 server {
-    # Railway proxy → conteneur sur $PORT ; écouter toutes les interfaces (pas seulement 127.0.0.1)
+    # Load balancer → conteneur sur $PORT ; écouter toutes les interfaces (pas seulement 127.0.0.1)
     listen 0.0.0.0:${PORT} default_server;
     server_name _;
     root /var/www/html/public;

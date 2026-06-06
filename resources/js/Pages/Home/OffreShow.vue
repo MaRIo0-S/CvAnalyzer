@@ -16,7 +16,7 @@ function copierLien() {
 
 <template>
     <AppLayout landing>
-        <div class="offres-page offres-show-page">
+        <div class="offres-page offres-show-page landing-inner landing-inner--narrow">
             <p class="offres-back-link">
                 <Link href="/offres">← Autres offres</Link>
             </p>

@@ -32,7 +32,7 @@ const form = useForm({
                             pattern="[0-9]{6}"
                             required
                             autocomplete="one-time-code"
-                            placeholder="Saisissez le code à 6 chiffres…"
+                            placeholder="000000"
                             class="code-input"
                         />
                     </div>

@@ -2,7 +2,6 @@
 .github
 .idea
 .vscode
-.cursor
 .codex
 .env
 .env.*

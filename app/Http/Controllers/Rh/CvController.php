@@ -138,23 +138,27 @@ class CvController extends Controller
                 $query->where('statut', $validated['statut']);
             }
         } else {
-            return $this->echecZip($request, 'Sélectionnez des CV ou un poste pour le téléchargement ZIP.');
+            return redirect()
+                ->route('rh.cvs.liste')
+                ->withErrors(['zip' => 'Sélectionnez des CV ou un poste pour le téléchargement ZIP.']);
         }
 
         $cvs = $query->get();
 
         if ($cvs->isEmpty()) {
-            return $this->echecZip($request, 'Aucun CV trouvé pour ce téléchargement.');
+            return redirect()
+                ->route('rh.cvs.liste')
+                ->withErrors(['zip' => 'Aucun CV trouvé pour ce téléchargement.']);
         }
 
-        $zipPath = storage_path('app/temp/cvs-'.uniqid('', true).'.zip');
+        $zipPath = storage_path('app/temp/cvs-'.uniqid().'.zip');
         if (! is_dir(dirname($zipPath))) {
             mkdir(dirname($zipPath), 0755, true);
         }
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            return $this->echecZip($request, 'Impossible de créer l\'archive ZIP.');
+            abort(500, 'Impossible de créer l\'archive ZIP.');
         }
 
         $ajoutes = 0;
@@ -175,7 +179,9 @@ class CvController extends Controller
         if ($ajoutes === 0) {
             @unlink($zipPath);
 
-            return $this->echecZip($request, 'Aucun fichier CV disponible sur le disque.');
+            return redirect()
+                ->route('rh.cvs.liste')
+                ->withErrors(['zip' => 'Aucun fichier CV disponible sur le disque.']);
         }
 
         $poste = ! empty($validated['poste_id'])
@@ -187,11 +193,6 @@ class CvController extends Controller
         $nomZip = 'cvs-'.$slug.'-'.now()->format('Y-m-d').'.zip';
 
         return response()->download($zipPath, $nomZip)->deleteFileAfterSend(true);
-    }
-
-    private function echecZip(Request $request, string $message): RedirectResponse
-    {
-        return redirect()->back()->withErrors(['zip' => $message]);
     }
 
     private function nomFichierZip(Cv $cv): string

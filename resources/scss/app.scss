@@ -206,7 +206,9 @@ a {
 }
 
 #nprogress .peg {
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.65), 0 0 6px rgba(34, 211, 238, 0.5) !important;
+    box-shadow:
+        0 0 10px rgba(99, 102, 241, 0.65),
+        0 0 6px rgba(34, 211, 238, 0.5) !important;
 }
 
 .app-shell-header {
@@ -1845,10 +1847,7 @@ a {
 
 .toast-stack {
     position: fixed;
-    top: max(
-        4.5rem,
-        calc(60px + env(safe-area-inset-top, 0px) + 0.65rem)
-    );
+    top: max(4.5rem, calc(60px + env(safe-area-inset-top, 0px) + 0.65rem));
     right: max(0.75rem, env(safe-area-inset-right));
     left: auto;
     bottom: auto;
@@ -1905,27 +1904,9 @@ a {
 
     @include down($bp-md) {
         max-width: min(380px, calc(100vw - 1.5rem));
-        padding: 0.75rem 0.65rem 0.75rem 0.85rem;
+        padding: 0.65rem 0.55rem 0.65rem 0.75rem;
         font-size: 0.85rem;
         align-items: flex-start;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
-        background: rgba(15, 23, 42, 0.96);
-
-        &--success {
-            background: rgba(6, 78, 59, 0.94);
-            border-color: rgba(52, 211, 153, 0.55);
-        }
-
-        &--error {
-            background: rgba(69, 10, 10, 0.94);
-            border-color: rgba(248, 113, 113, 0.55);
-        }
-
-        &--info {
-            background: rgba(30, 27, 75, 0.94);
-            border-color: rgba(99, 102, 241, 0.55);
-        }
     }
 
     &__close {

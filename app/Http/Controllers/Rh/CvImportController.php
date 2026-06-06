@@ -62,7 +62,7 @@ class CvImportController extends Controller
                 continue;
             }
 
-            $cv = Cv::create([
+            Cv::create([
                 'poste_id' => $poste->id,
                 'entreprise_id' => $request->user()->entreprise_id,
                 'user_id' => null,
@@ -76,8 +76,6 @@ class CvImportController extends Controller
                 'modifiable_jusqu' => null,
                 'importe_par_rh' => true,
             ]);
-
-            $this->serviceAnalyse->persisterTexteExtrait($cv->fresh());
 
             $importes++;
         }

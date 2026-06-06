@@ -14,31 +14,37 @@ const props = defineProps({
     depuisAnalyse: { type: Boolean, default: false },
 });
 
-const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mailtoCandidat } =
-    useCvDecision({
-        lotEnAttente: props.lotEnAttente,
-        afterSuccess: (cv, { valide, annulee }) => {
-            if (!props.lotEnAttente && valide) {
-                router.visit(props.retourUrl, {
-                    onFinish: () => {
-                        setTimeout(() => {
-                            window.location.href = mailtoCandidat(cv);
-                        }, 200);
-                    },
-                });
-                return;
-            }
-            if (props.lotEnAttente && !annulee) {
-                router.reload({ preserveScroll: true });
-                return;
-            }
-            if (props.lotEnAttente && annulee) {
-                router.reload({ preserveScroll: true });
-                return;
-            }
-            router.visit(props.retourUrl);
-        },
-    });
+const {
+    peutDecider,
+    aDecisionProvisoire,
+    annulerDecision,
+    valider,
+    refuser,
+    mailtoCandidat,
+} = useCvDecision({
+    lotEnAttente: props.lotEnAttente,
+    afterSuccess: (cv, { valide, annulee }) => {
+        if (!props.lotEnAttente && valide) {
+            router.visit(props.retourUrl, {
+                onFinish: () => {
+                    setTimeout(() => {
+                        window.location.href = mailtoCandidat(cv);
+                    }, 200);
+                },
+            });
+            return;
+        }
+        if (props.lotEnAttente && !annulee) {
+            router.reload({ preserveScroll: true });
+            return;
+        }
+        if (props.lotEnAttente && annulee) {
+            router.reload({ preserveScroll: true });
+            return;
+        }
+        router.visit(props.retourUrl);
+    },
+});
 </script>
 
 <template>
@@ -84,8 +90,9 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
             <p class="card__lead">
                 <template v-if="aDecisionProvisoire(cv)">
                     Décision enregistrée pour ce lot :
-                    <strong>{{ cv.statut_label }}</strong>. Vous pouvez la
-                    retirer ou la remplacer avant de confirmer l'analyse.
+                    <strong>{{ cv.statut_label }}</strong
+                    >. Vous pouvez la retirer ou la remplacer avant de confirmer
+                    l'analyse.
                 </template>
                 <template v-else>
                     Validez ou refusez ce CV ; la décision ne sera appliquée
@@ -102,7 +109,9 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
                     Annuler la décision
                 </button>
                 <button
-                    v-if="peutDecider(cv) || cv.decision_provisoire !== 'valide'"
+                    v-if="
+                        peutDecider(cv) || cv.decision_provisoire !== 'valide'
+                    "
                     type="button"
                     class="btn btn--success btn--sm"
                     @click="valider(cv)"
@@ -110,7 +119,10 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
                     Valider
                 </button>
                 <button
-                    v-if="peutDecider(cv) || cv.decision_provisoire !== 'non_valide'"
+                    v-if="
+                        peutDecider(cv) ||
+                        cv.decision_provisoire !== 'non_valide'
+                    "
                     type="button"
                     class="btn btn--danger btn--sm"
                     @click="refuser(cv)"
@@ -148,7 +160,9 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
             <dl class="cv-detail-grid">
                 <div class="cv-detail-grid__item">
                     <dt>E-mail</dt>
-                    <dd>{{ cv.email_affichage || cv.email_candidat || "—" }}</dd>
+                    <dd>
+                        {{ cv.email_affichage || cv.email_candidat || "—" }}
+                    </dd>
                 </div>
                 <div class="cv-detail-grid__item">
                     <dt>Date de dépôt</dt>
@@ -160,7 +174,9 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
                 </div>
                 <div v-if="cv.score != null" class="cv-detail-grid__item">
                     <dt>Score</dt>
-                    <dd><span class="score-pill">{{ cv.score }}%</span></dd>
+                    <dd>
+                        <span class="score-pill">{{ cv.score }}%</span>
+                    </dd>
                 </div>
                 <div
                     v-if="cv.mots_cles_matches?.length"
@@ -181,11 +197,7 @@ const { peutDecider, aDecisionProvisoire, annulerDecision, valider, refuser, mai
 
         <div v-if="cv.fichier_preview" class="card">
             <h2 class="card__title card__title--sm">Aperçu du CV</h2>
-            <iframe
-                :src="fichierUrl"
-                class="cv-preview"
-                title="Aperçu du CV"
-            />
+            <iframe :src="fichierUrl" class="cv-preview" title="Aperçu du CV" />
         </div>
 
         <div v-else-if="cv.texte_extrait" class="card">

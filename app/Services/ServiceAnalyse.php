@@ -25,10 +25,6 @@ class ServiceAnalyse
 
     public function extraireTexte(Cv $cv): string
     {
-        if (! filled($cv->fichier_url) || ! Storage::disk('public')->exists($cv->fichier_url)) {
-            return '';
-        }
-
         $path = Storage::disk('public')->path($cv->fichier_url);
         $format = strtolower($cv->format_fichier);
 
@@ -83,7 +79,13 @@ class ServiceAnalyse
             StatutCandidatureMail::envoyerSiChange($cv, $ancienStatut, StatutCv::EnCoursAnalyse);
         }
 
-        $texte = $this->persisterTexteExtrait($cv);
+        $texte = trim($this->extraireTexte($cv));
+        if ($texte === '' && filled(trim((string) $cv->texte_extrait))) {
+            $texte = trim($cv->texte_extrait);
+        }
+        if ($texte !== '') {
+            $cv->update(['texte_extrait' => $texte]);
+        }
 
         $resultat = $this->calculerScore($texte, $mots);
 
@@ -152,20 +154,5 @@ class ServiceAnalyse
         $texte = preg_replace('/[^\x20-\x7E\x0A\xC0-\xFF]/', ' ', $contenu);
 
         return trim(preg_replace('/\s+/', ' ', $texte ?? ''));
-    }
-
-    public function persisterTexteExtrait(Cv $cv): string
-    {
-        $texte = trim($this->extraireTexte($cv));
-
-        if ($texte === '' && filled(trim((string) $cv->texte_extrait))) {
-            return trim($cv->texte_extrait);
-        }
-
-        if ($texte !== '') {
-            $cv->update(['texte_extrait' => $texte]);
-        }
-
-        return $texte;
     }
 }

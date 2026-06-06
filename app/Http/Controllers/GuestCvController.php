@@ -173,8 +173,6 @@ class GuestCvController extends Controller
             'modifiable_jusqu' => now()->addHours($graceHours),
         ]);
 
-        $this->serviceAnalyse->persisterTexteExtrait($cv->fresh());
-
         if (! $user) {
             $request->session()->put('guest_cv_id', $cv->id);
             $request->session()->put('guest_depot_count', (int) $request->session()->get('guest_depot_count', 0) + 1);
@@ -259,14 +257,11 @@ class GuestCvController extends Controller
             $data['fichier_url'] = $file->store('cvs', 'public');
             $data['taille_fichier'] = round($tailleMo, 2);
             $data['format_fichier'] = $extension;
+            $data['texte_extrait'] = null;
             $cv->resultatAnalyse()?->delete();
         }
 
         $cv->update($data);
-
-        if ($request->hasFile('fichier')) {
-            $this->serviceAnalyse->persisterTexteExtrait($cv->fresh());
-        }
 
         return back()->with('success', 'Candidature mise à jour. Modifiable jusqu\'au '.$cv->modifiable_jusqu->format('d/m/Y H:i').'.');
     }

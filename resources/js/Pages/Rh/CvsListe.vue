@@ -6,7 +6,6 @@ import SearchSelect from "@/Components/SearchSelect.vue";
 import { useCvDecision } from "@/composables/useCvDecision";
 import { useToastStore } from "@/stores/toast";
 import { badgeClassFromCv, filtrerCvs, trierCvs } from "@/utils/cvList";
-import { telechargerZipParPoste } from "@/utils/downloadZip";
 
 const props = defineProps({
     cvs: Array,
@@ -29,7 +28,7 @@ const { peutDecider, valider, refuser } = useCvDecision();
 const triAnalyseDisponible = computed(() => filtreStatut.value !== "cv_recu");
 
 const posteItems = computed(() =>
-    (props.postes || []).map((p) => ({ id: p.id, label: p.titre }))
+    (props.postes || []).map((p) => ({ id: p.id, label: p.titre })),
 );
 
 const toolbarHint = computed(() => {
@@ -100,9 +99,13 @@ function toggleSelectAll() {
 }
 
 function telechargerZip(ids) {
-    if (!telechargerZipParPoste(props.zipUrl, ids)) {
+    if (!ids?.length) {
         toast.error("Cochez au moins un CV (ou « Tout sélectionner »).");
+        return;
     }
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("cv_ids[]", String(id)));
+    window.location.href = `${props.zipUrl}?${params.toString()}`;
 }
 </script>
 
@@ -282,7 +285,11 @@ function telechargerZip(ids) {
                                 {{ cv.nom_candidat }}
                             </h3>
                             <p class="cvs-row__email">
-                                {{ cv.email_affichage || cv.email_candidat || "—" }}
+                                {{
+                                    cv.email_affichage ||
+                                    cv.email_candidat ||
+                                    "—"
+                                }}
                             </p>
                         </div>
                         <span :class="['badge', badgeClassFromCv(cv)]">

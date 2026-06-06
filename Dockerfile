@@ -64,7 +64,6 @@ RUN mkdir -p \
         /var/lib/nginx/body \
         storage/framework/{cache,sessions,views} \
         storage/app/public \
-        storage/app/temp \
         storage/logs \
         bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \

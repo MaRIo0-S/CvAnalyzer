@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Mail\CandidatAlerteMail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -56,6 +57,9 @@ class AccountController extends Controller
             'email.unique' => 'Cet e-mail est déjà utilisé.',
         ]);
 
+        $changements = $validated['name'] !== $user->name
+            || $validated['email'] !== $user->email;
+
         $user->update($validated);
 
         if ($user->role === Role::Candidat) {
@@ -65,6 +69,10 @@ class AccountController extends Controller
                     'nom_candidat' => $validated['name'],
                     'email_candidat' => $validated['email'],
                 ]);
+            }
+
+            if ($changements) {
+                CandidatAlerteMail::envoyerProfil($user->fresh());
             }
         }
 

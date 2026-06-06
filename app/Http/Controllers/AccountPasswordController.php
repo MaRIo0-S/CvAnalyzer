@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CandidatAlerteMail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -19,9 +20,12 @@ class AccountPasswordController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $request->user()->update([
+        $user = $request->user();
+        $user->update([
             'password' => $validated['password'],
         ]);
+
+        CandidatAlerteMail::envoyerMotDePasse($user->fresh());
 
         return back()->with('success', 'Votre mot de passe a été mis à jour.');
     }

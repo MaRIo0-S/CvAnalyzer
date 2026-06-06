@@ -78,7 +78,7 @@ Route::middleware(['auth', 'active', 'role:sous_admin,super_admin'])->prefix('rh
     Route::get('/cvs/liste', [CvController::class, 'index'])->name('rh.cvs.liste');
     Route::get('/cvs/importer', [CvImportController::class, 'create'])->name('rh.cvs.importer');
     Route::post('/cvs/importer', [CvImportController::class, 'store'])->name('rh.cvs.importer.store');
-    Route::get('/cvs/zip', [CvController::class, 'telechargerZip'])->name('rh.cvs.zip');
+    Route::post('/cvs/zip', [CvController::class, 'telechargerZip'])->name('rh.cvs.zip');
     Route::get('/cvs/{cv}/consulter', [CvController::class, 'show'])->name('rh.cv.consulter');
     Route::get('/cvs/{cv}/fichier', [CvController::class, 'fichier'])->name('rh.cv.fichier');
     Route::get('/cvs/{cv}/telecharger', [CvController::class, 'telecharger'])->name('rh.cv.telecharger');

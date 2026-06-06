@@ -58,7 +58,7 @@ class HandleInertiaRequests extends Middleware
             ->map(fn (Notification $n) => [
                 'id' => $n->id,
                 'message' => $n->message,
-                'statut_label' => \App\Enums\StatutCv::from($n->statut_au_moment)->label(),
+                'statut_label' => \App\Enums\StatutCv::tryFrom($n->statut_au_moment)?->label() ?? 'Compte',
                 'lu' => (bool) $n->lu,
                 'date' => $n->created_at?->format('d/m/Y H:i'),
             ]);

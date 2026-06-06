@@ -10,6 +10,7 @@ use App\Models\MessageContact;
 use App\Models\Poste;
 use App\Models\User;
 use Database\Seeders\DemoDataSeeder;
+use App\Mail\CandidatAlerteMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -694,5 +695,33 @@ class SiteFunctionalityTest extends TestCase
         $this->get('/super-admin')->assertNotFound();
         $this->get('/super-admin/rh')->assertNotFound();
         $this->get('/admin/back-office')->assertNotFound();
+    }
+
+    public function test_telechargement_zip_rh_en_post(): void
+    {
+        $rh = User::where('email', 'rh@cvapp.test')->first();
+        $cv = Cv::whereHas('poste', fn ($q) => $q->where('user_id', $rh->id))->first();
+        $this->assertNotNull($cv);
+
+        $this->actingAs($rh)
+            ->post(route('rh.cvs.zip'), ['cv_ids' => [$cv->id]])
+            ->assertOk()
+            ->assertDownload();
+    }
+
+    public function test_mise_a_jour_profil_candidat_envoie_email(): void
+    {
+        Mail::fake();
+
+        $candidat = User::where('email', 'candidat@cvapp.test')->first();
+
+        $this->actingAs($candidat)
+            ->put(route('account.update'), [
+                'name' => 'Jean Candidat Modifié',
+                'email' => 'candidat@cvapp.test',
+            ])
+            ->assertRedirect();
+
+        Mail::assertSent(CandidatAlerteMail::class);
     }
 }

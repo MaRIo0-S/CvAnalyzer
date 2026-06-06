@@ -19,6 +19,7 @@ fi
 
 php artisan config:clear --no-ansi 2>/dev/null || true
 php artisan storage:link --force --no-ansi 2>/dev/null || true
+mkdir -p storage/app/temp storage/app/public/cvs 2>/dev/null || true
 
 # Migrations + cache en arrière-plan : Nginx doit répondre vite pour le healthcheck (/up)
 (

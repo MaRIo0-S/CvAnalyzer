@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Role;
 use App\Enums\StatutCv;
+use App\Mail\CandidatAlerteMail;
 use App\Mail\StatutCandidatureMail;
 use App\Support\CandidatureSession;
 use App\Support\DepotOffreSession;
@@ -262,6 +263,9 @@ class GuestCvController extends Controller
         }
 
         $cv->update($data);
+        $cv->refresh();
+
+        CandidatAlerteMail::envoyerDossier($cv);
 
         return back()->with('success', 'Candidature mise à jour. Modifiable jusqu\'au '.$cv->modifiable_jusqu->format('d/m/Y H:i').'.');
     }

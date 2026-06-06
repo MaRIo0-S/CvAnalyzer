@@ -14,22 +14,17 @@ use App\Models\ResultatAnalyse;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
         Storage::disk('public')->makeDirectory('cvs');
-        $placeholderPdf = 'cvs/demo-placeholder.pdf';
-        if (! Storage::disk('public')->exists($placeholderPdf)) {
-            Storage::disk('public')->put(
-                $placeholderPdf,
-                "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n".
-                "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n".
-                "3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R>>endobj\n".
-                "xref\n0 4\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n0\n%%EOF"
-            );
-        }
+        $sampleSource = database_path('seeders/assets/sample-cv.pdf');
+        $pdfSource = is_file($sampleSource)
+            ? file_get_contents($sampleSource)
+            : $this->contenuPdfDemoGenerique();
 
         $demoPassword = 'password';
 
@@ -299,14 +294,16 @@ class DemoDataSeeder extends Seeder
         ];
 
         foreach ($cvsDemo as $i => $data) {
+            $fichierUrl = $this->publierPdfDemo($data['email'], $pdfSource);
+
             Cv::updateOrCreate(
                 ['email_candidat' => $data['email'], 'poste_id' => $data['poste_id']],
                 [
                     'entreprise_id' => $data['entreprise_id'],
                     'user_id' => $data['user_id'] ?? null,
                     'nom_candidat' => $data['nom'],
-                    'fichier_url' => $placeholderPdf,
-                    'taille_fichier' => 0.15,
+                    'fichier_url' => $fichierUrl,
+                    'taille_fichier' => round(strlen($pdfSource) / 1024 / 1024, 2) ?: 0.15,
                     'format_fichier' => 'pdf',
                     'texte_extrait' => $data['texte'],
                     'statut' => $data['statut'],
@@ -326,10 +323,10 @@ class DemoDataSeeder extends Seeder
                 'user_id' => null,
                 'nom_candidat' => '',
                 'email_candidat' => '',
-                'fichier_url' => $placeholderPdf,
-                'taille_fichier' => 0.15,
+                'fichier_url' => $this->publierPdfDemo('import-rh-laravel', $pdfSource),
+                'taille_fichier' => round(strlen($pdfSource) / 1024 / 1024, 2) ?: 0.15,
                 'format_fichier' => 'pdf',
-                'texte_extrait' => 'CV importé par RH — coordonnées à extraire du fichier.',
+                'texte_extrait' => 'CV importé par RH — Laravel PHP Vue PostgreSQL API REST Git Docker.',
                 'statut' => StatutCv::CvRecu,
                 'date_depot' => now()->subHours(2),
                 'modifiable_jusqu' => null,
@@ -392,5 +389,34 @@ class DemoDataSeeder extends Seeder
         $this->command?->info('RH DataSoft : rh3@cvapp.test');
         $this->command?->info('Candidat : candidat@cvapp.test → /login');
         $this->command?->info('CV importé RH (sans e-mail) : dossier TechCorp / Développeur Laravel');
+        if (! is_file(database_path('seeders/assets/sample-cv.pdf'))) {
+            $this->command?->warn('Astuce : placez votre CV dans database/seeders/assets/sample-cv.pdf puis relancez le seed.');
+        }
+    }
+
+    private function publierPdfDemo(string $identifiant, string $contenu): string
+    {
+        $chemin = 'cvs/demo-'.Str::slug($identifiant).'.pdf';
+        Storage::disk('public')->put($chemin, $contenu);
+
+        return $chemin;
+    }
+
+    private function contenuPdfDemoGenerique(): string
+    {
+        $texte = 'CV demo Laravel PHP Vue PostgreSQL Docker Git API REST Inertia';
+        $stream = "BT /F1 11 Tf 50 700 Td ({$texte}) Tj ET";
+        $len = strlen($stream);
+
+        $pdf = "%PDF-1.4\n";
+        $pdf .= "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n";
+        $pdf .= "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n";
+        $pdf .= "3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n";
+        $pdf .= "4 0 obj<</Length {$len}>>stream\n{$stream}\nendstream\nendobj\n";
+        $pdf .= "5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n";
+        $pdf .= "xref\n0 6\n0000000000 65535 f \n";
+        $pdf .= "trailer<</Size 6/Root 1 0 R>>\nstartxref\n0\n%%EOF";
+
+        return $pdf;
     }
 }

@@ -158,7 +158,9 @@ class CvController extends Controller
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            abort(500, 'Impossible de créer l\'archive ZIP.');
+            return redirect()
+                ->back()
+                ->withErrors(['zip' => 'Impossible de créer l\'archive ZIP.']);
         }
 
         $ajoutes = 0;

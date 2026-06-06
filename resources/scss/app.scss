@@ -1874,24 +1874,25 @@ a {
     padding: 0.85rem 1rem;
     border-radius: 10px;
     border: 1px solid $border;
-    background: $bg-elevated;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    background: color-mix(in srgb, $bg-elevated 94%, #000 6%);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
     font-size: 0.875rem;
     color: $text;
 
     &--success {
-        border-color: rgba(52, 211, 153, 0.4);
-        background: rgba(52, 211, 153, 0.12);
+        border-color: rgba(52, 211, 153, 0.55);
+        background: color-mix(in srgb, #064e3b 88%, $bg-elevated 12%);
     }
 
     &--error {
-        border-color: rgba(248, 113, 113, 0.4);
-        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.55);
+        background: color-mix(in srgb, #7f1d1d 88%, $bg-elevated 12%);
     }
 
     &--info {
-        border-color: rgba(99, 102, 241, 0.4);
-        background: $indigo-dim;
+        border-color: rgba(99, 102, 241, 0.55);
+        background: color-mix(in srgb, #312e81 88%, $bg-elevated 12%);
     }
 
     &__message {
@@ -2042,6 +2043,8 @@ body.nav-menu-open {
             font-size: 0.95rem;
             color: $text;
             line-height: 1.45;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         &--wide {

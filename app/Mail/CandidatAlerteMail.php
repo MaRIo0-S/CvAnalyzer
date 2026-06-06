@@ -33,7 +33,7 @@ class CandidatAlerteMail extends Mailable
             userId: $user->id,
             type: 'profil',
             titre: 'Votre profil a été mis à jour',
-            detail: 'Vos informations de compte (nom ou e-mail) ont été modifiées. Si vous n\'êtes pas à l\'origine de ce changement, contactez-nous rapidement.',
+            detail: 'Vos informations de compte (nom ou e-mail) ont été modifiées.',
             lien: route('account.edit', absolute: true),
         );
     }
@@ -46,7 +46,7 @@ class CandidatAlerteMail extends Mailable
             userId: $user->id,
             type: 'mot_de_passe',
             titre: 'Votre mot de passe a été modifié',
-            detail: 'Le mot de passe de votre compte candidat vient d\'être changé. Si vous n\'êtes pas à l\'origine de cette action, sécurisez votre compte immédiatement.',
+            detail: 'Le mot de passe de votre compte candidat vient d\'être changé.',
             lien: route('account.password.edit', absolute: true),
         );
     }
@@ -82,7 +82,7 @@ class CandidatAlerteMail extends Mailable
             nom: $user->name,
             type: 'compte_supprime',
             titre: 'Votre compte a été supprimé',
-            detail: 'Votre compte candidat et toutes les candidatures associées ont été supprimés définitivement de la plateforme. Si vous n\'êtes pas à l\'origine de cette action, contactez-nous.',
+            detail: 'Votre compte candidat et toutes les candidatures associées ont été supprimés définitivement de la plateforme.',
             lien: null,
         );
     }
@@ -144,7 +144,7 @@ class CandidatAlerteMail extends Mailable
         if ($lien) {
             $html .= "<p style=\"margin:0 0 20px;\"><a href=\"{$lien}\" style=\"color:#4f46e5;\">Ouvrir mon espace candidat</a></p>";
         }
-        $html .= '<p style="margin:0;font-size:13px;color:#64748b;">Cet e-mail est envoyé automatiquement. Merci de ne pas répondre directement à ce message.</p>';
+        $html .= '<p style="margin:0;font-size:13px;color:#64748b;">Message envoyé automatiquement.</p>';
         $html .= '</div>';
 
         return new Content(htmlString: $html);

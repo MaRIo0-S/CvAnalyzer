@@ -102,7 +102,7 @@ class StatutCandidatureMail extends Mailable
         $html .= '</table>';
         $html .= "<p style=\"margin:0 0 16px;\">{$detail}</p>";
         $html .= "<p style=\"margin:0 0 20px;\"><a href=\"{$lien}\" style=\"color:#4f46e5;\">Ouvrir ma page candidature</a> (suivi du statut en ligne)</p>";
-        $html .= '<p style="margin:0;font-size:13px;color:#64748b;">Cet e-mail est envoyé automatiquement à chaque changement de statut. Merci de ne pas répondre directement à ce message.</p>';
+        $html .= '<p style="margin:0;font-size:13px;color:#64748b;">Message envoyé automatiquement.</p>';
         $html .= '</div>';
 
         return new Content(htmlString: $html);

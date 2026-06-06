@@ -21,8 +21,11 @@ class CandidatureSession
                 ->where('statut', StatutCv::CvRecu)
                 ->orderByDesc('date_depot')
                 ->first();
-        } elseif ($request->session()->has('guest_cv_id')) {
-            $cv = Cv::find($request->session()->get('guest_cv_id'));
+        } else {
+            $guestId = GuestCvCookie::id($request);
+            if ($guestId) {
+                $cv = Cv::find($guestId);
+            }
         }
 
         if (! $cv || ! $cv->peutModifier() || $cv->statut !== StatutCv::CvRecu) {
@@ -33,7 +36,7 @@ class CandidatureSession
             return null;
         }
 
-        if (! $user && (int) $request->session()->get('guest_cv_id') !== $cv->id) {
+        if (! $user && GuestCvCookie::id($request) !== $cv->id) {
             return null;
         }
 

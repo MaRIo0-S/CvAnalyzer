@@ -16,6 +16,8 @@ class CandidatNotificationController extends Controller
             ->where('lu', false)
             ->update(['lu' => true]);
 
+        $request->session()->forget(['success', 'error', 'info']);
+
         if ($request->header('X-Inertia')) {
             return back();
         }
@@ -36,7 +38,7 @@ class CandidatNotificationController extends Controller
             ->map(fn (Notification $n) => [
                 'id' => $n->id,
                 'message' => $n->message,
-                'statut_label' => StatutCv::from($n->statut_au_moment)->label(),
+                'statut_label' => StatutCv::tryFrom($n->statut_au_moment)?->label() ?? 'Compte',
                 'lu' => (bool) $n->lu,
                 'date' => $n->created_at?->format('d/m/Y H:i'),
             ]);

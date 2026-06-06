@@ -31,7 +31,7 @@ function marquerCommeLus() {
         {
             preserveScroll: true,
             preserveState: true,
-            only: ["candidatNotifications"],
+            only: ["candidatNotifications", "flash"],
         }
     );
 }

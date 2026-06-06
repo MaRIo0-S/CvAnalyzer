@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\Role;
 use App\Mail\CandidatAlerteMail;
+use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class AccountController extends Controller
@@ -57,25 +60,68 @@ class AccountController extends Controller
             'email.unique' => 'Cet e-mail est déjà utilisé.',
         ]);
 
-        $changements = $validated['name'] !== $user->name
-            || $validated['email'] !== $user->email;
+        if ($validated['email'] !== $user->email) {
+            AccountEmailVerifyController::demarrerChangement(
+                $request,
+                $validated['name'],
+                $validated['email']
+            );
 
-        $user->update($validated);
+            return redirect()
+                ->route('account.email.verify')
+                ->with('success', 'Un code à 6 chiffres a été envoyé à votre nouvelle adresse e-mail.');
+        }
 
-        if ($user->role === Role::Candidat) {
-            $cv = $user->cvs()->orderBy('date_depot', 'desc')->first();
-            if ($cv && $cv->peutModifier()) {
-                $cv->update([
-                    'nom_candidat' => $validated['name'],
-                    'email_candidat' => $validated['email'],
-                ]);
-            }
+        $nomChange = $validated['name'] !== $user->name;
+        $user->update(['name' => $validated['name']]);
 
-            if ($changements) {
-                CandidatAlerteMail::envoyerProfil($user->fresh());
-            }
+        $cv = $user->cvs()->orderByDesc('date_depot')->first();
+        if ($cv && $cv->peutModifier()) {
+            $cv->update(['nom_candidat' => $validated['name']]);
+        }
+
+        if ($nomChange) {
+            CandidatAlerteMail::envoyerProfil($user->fresh());
         }
 
         return back()->with('success', 'Profil mis à jour.');
+    }
+
+    public function destroy(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== Role::Candidat) {
+            abort(403);
+        }
+
+        $request->validate([
+            'confirmation' => ['required', 'in:SUPPRIMER'],
+        ], [
+            'confirmation.in' => 'Saisissez SUPPRIMER pour confirmer la suppression définitive.',
+        ]);
+
+        $cvs = $user->cvs()->get();
+        foreach ($cvs as $cv) {
+            if ($cv->fichier_url) {
+                Storage::disk('public')->delete($cv->fichier_url);
+            }
+            $cv->resultatAnalyse()?->delete();
+            $cv->delete();
+        }
+
+        Notification::where('user_id', $user->id)->delete();
+
+        CandidatAlerteMail::envoyerSuppressionCompte($user);
+
+        $user->delete();
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('home')
+            ->with('success', 'Votre compte a été supprimé définitivement.');
     }
 }

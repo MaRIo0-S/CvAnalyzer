@@ -99,7 +99,10 @@ watch(
     () => props.cvModifiable,
     (cv) => {
         if (cv) {
-            modifyForm.nom_candidat = cv.nom_candidat ?? "";
+            modifyForm.nom_candidat =
+                props.isLoggedIn && props.userDefaults
+                    ? (props.userDefaults.nom_candidat ?? "")
+                    : (cv.nom_candidat ?? "");
             modifyForm.email_candidat = cv.email_candidat ?? "";
             modifyForm.entreprise_id = cv.entreprise_id ?? "";
             modifyForm.poste_id = cv.poste_id ?? "";
@@ -147,6 +150,14 @@ function modifierCandidature() {
 
 const depotFileName = ref("");
 const modifyFileName = ref("");
+const depotFileInput = ref(null);
+const modifyFileInput = ref(null);
+
+function resetFileInput(inputRef) {
+    if (inputRef.value) {
+        inputRef.value.value = "";
+    }
+}
 
 function onDepotFile(event) {
     const file = event.target.files[0];
@@ -163,8 +174,10 @@ function onModifyFile(event) {
 
 <template>
     <AppLayout>
-        <p v-if="cvModifiable" class="offres-back-link">
-            <Link href="/offres">← Autres offres</Link>
+        <p class="page-toolbar" style="margin-bottom: 1.25rem">
+            <Link href="/offres" class="btn btn--accent btn--sm"
+                >← Autres offres</Link
+            >
         </p>
 
         <div class="page-header">
@@ -261,7 +274,13 @@ function onModifyFile(event) {
                         v-model="modifyForm.nom_candidat"
                         type="text"
                         required
+                        :disabled="isLoggedIn"
+                        :class="{ 'input--readonly': isLoggedIn }"
                     />
+                    <small v-if="isLoggedIn" class="text-muted"
+                        >Pour modifier votre nom, rendez-vous dans
+                        <Link href="/compte">Mon compte</Link>.</small
+                    >
                 </div>
                 <div class="form-group">
                     <label>Email de contact</label>
@@ -270,15 +289,23 @@ function onModifyFile(event) {
                         type="email"
                         required
                     />
+                    <small class="text-muted"
+                        >Utilisé par le recruteur pour vous contacter — indépendant
+                        de l'e-mail de connexion (<Link href="/compte"
+                            >Mon compte</Link
+                        >).</small
+                    >
                 </div>
                 <div class="form-group">
                     <label>Nouveau CV (optionnel)</label>
                     <div class="file-upload">
                         <label class="file-upload__trigger">
                             <input
+                                ref="modifyFileInput"
                                 type="file"
                                 class="file-upload__input"
                                 accept=".pdf,.doc,.docx"
+                                @click="resetFileInput(modifyFileInput)"
                                 @change="onModifyFile"
                             />
                             <span class="btn btn--accent">Importer un CV</span>
@@ -301,9 +328,6 @@ function onModifyFile(event) {
         <div v-if="!cvModifiable" class="depot-steps">
             <section v-if="champsVerrouilles" class="depot-step card">
                 <h2 class="card__title card__title--sm">Offre sélectionnée</h2>
-                <p class="card__lead">
-                    <Link href="/offres">← Autres offres</Link>
-                </p>
                 <div class="info-panel">
                     <p class="text-muted">{{ prefill?.entreprise_nom }}</p>
                     <h3>{{ prefill?.poste_titre || selectedPoste?.titre }}</h3>
@@ -337,7 +361,13 @@ function onModifyFile(event) {
                             v-model="form.nom_candidat"
                             type="text"
                             required
+                            :disabled="isLoggedIn"
+                            :class="{ 'input--readonly': isLoggedIn }"
                         />
+                        <small v-if="isLoggedIn" class="text-muted"
+                            >Pour modifier votre nom, rendez-vous dans
+                            <Link href="/compte">Mon compte</Link>.</small
+                        >
                     </div>
                     <div class="form-group">
                         <label>Email de contact</label>
@@ -346,8 +376,12 @@ function onModifyFile(event) {
                             type="email"
                             required
                         />
-                        <small
-                            >Utilisé par le recruteur pour vous contacter.</small
+                        <small class="text-muted"
+                            >Utilisé par le recruteur pour vous contacter — peut
+                            être différent de l'e-mail de connexion (<Link
+                                href="/compte"
+                                >Mon compte</Link
+                            >).</small
                         >
                     </div>
                     <div class="form-group">
@@ -355,10 +389,12 @@ function onModifyFile(event) {
                         <div class="file-upload">
                             <label class="file-upload__trigger">
                                 <input
+                                    ref="depotFileInput"
                                     type="file"
                                     class="file-upload__input"
                                     accept=".pdf,.doc,.docx"
                                     required
+                                    @click="resetFileInput(depotFileInput)"
                                     @change="onDepotFile"
                                 />
                                 <span class="btn btn--accent"

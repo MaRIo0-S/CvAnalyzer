@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'info' => fn () => $request->session()->get('info'),
             ],
             'candidatNotifications' => fn () => $this->candidatNotifications($request),
             'candidatureEnCours' => fn () => CandidatureSession::enCours($request),

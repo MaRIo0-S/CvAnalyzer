@@ -75,6 +75,18 @@ class CandidatAlerteMail extends Mailable
         );
     }
 
+    public static function envoyerSuppressionCompte(User $user): bool
+    {
+        return self::envoyer(
+            email: $user->email,
+            nom: $user->name,
+            type: 'compte_supprime',
+            titre: 'Votre compte a été supprimé',
+            detail: 'Votre compte candidat et toutes les candidatures associées ont été supprimés définitivement de la plateforme. Si vous n\'êtes pas à l\'origine de cette action, contactez-nous.',
+            lien: null,
+        );
+    }
+
     private static function envoyer(
         string $email,
         string $nom,

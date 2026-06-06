@@ -8,6 +8,7 @@ use App\Mail\CandidatAlerteMail;
 use App\Mail\StatutCandidatureMail;
 use App\Support\CandidatureSession;
 use App\Support\DepotOffreSession;
+use App\Support\GuestCvCookie;
 use App\Models\Cv;
 use App\Models\Entreprise;
 use App\Models\Poste;
@@ -46,7 +47,7 @@ class GuestCvController extends Controller
             return Inertia::render('Guest/Deposer', [
                 'pageMode' => 'modify',
                 'prefill' => null,
-                'champsVerrouilles' => false,
+                'champsVerrouilles' => (bool) $request->user(),
                 'entreprises' => Entreprise::avecRh()->orderBy('nom')->get(['id', 'nom', 'description']),
                 'postes' => Poste::where('est_ouvert', true)
                     ->whereHas('entreprise', fn ($q) => $q->avecRh())
@@ -133,7 +134,6 @@ class GuestCvController extends Controller
         ]);
 
         if ($user) {
-            $validated['email_candidat'] = $user->email;
             $validated['nom_candidat'] = $user->name;
         }
 
@@ -177,6 +177,7 @@ class GuestCvController extends Controller
         if (! $user) {
             $request->session()->put('guest_cv_id', $cv->id);
             $request->session()->put('guest_depot_count', (int) $request->session()->get('guest_depot_count', 0) + 1);
+            GuestCvCookie::remember($cv->id);
         }
 
         $message = "CV déposé (dossier n°{$cv->id}). {$graceHours} h pour modifier votre dossier.";
@@ -224,10 +225,6 @@ class GuestCvController extends Controller
         ]);
 
         $user = $request->user();
-        if ($user) {
-            $validated['email_candidat'] = $user->email;
-            $validated['nom_candidat'] = $user->name;
-        }
 
         $poste = Poste::findOrFail($validated['poste_id']);
         if ((int) $poste->entreprise_id !== (int) $validated['entreprise_id']) {
@@ -235,7 +232,7 @@ class GuestCvController extends Controller
         }
 
         $data = [
-            'nom_candidat' => $validated['nom_candidat'],
+            'nom_candidat' => $user ? $user->name : $validated['nom_candidat'],
             'email_candidat' => $validated['email_candidat'],
             'poste_id' => $validated['poste_id'],
             'entreprise_id' => $validated['entreprise_id'],
@@ -278,7 +275,7 @@ class GuestCvController extends Controller
             return true;
         }
 
-        return (int) $request->session()->get('guest_cv_id') === $cv->id;
+        return GuestCvCookie::id($request) === $cv->id;
     }
 
     private function cvModifiablePourSession(Request $request): ?array

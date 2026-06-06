@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureGuestCanDeposit;
+use App\Http\Middleware\SyncGuestCvCookie;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $middleware->web(append: [
+            SyncGuestCvCookie::class,
             HandleInertiaRequests::class,
         ]);
         $middleware->alias([

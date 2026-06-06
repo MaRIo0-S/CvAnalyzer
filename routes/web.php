@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountEmailVerifyController;
 use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\Admin\BackOfficeController;
 use App\Http\Controllers\Admin\MessageContactController;
@@ -55,6 +56,9 @@ Route::post('/inscription/verification', [RegisterController::class, 'verify'])-
 Route::middleware(['auth', 'active', 'no.rh.self.account'])->group(function () {
     Route::get('/compte', [AccountController::class, 'edit'])->name('account.edit');
     Route::put('/compte', [AccountController::class, 'update'])->name('account.update');
+    Route::delete('/compte', [AccountController::class, 'destroy'])->name('account.destroy');
+    Route::get('/compte/verification-email', [AccountEmailVerifyController::class, 'show'])->name('account.email.verify');
+    Route::post('/compte/verification-email', [AccountEmailVerifyController::class, 'verify'])->name('account.email.verify.store');
     Route::get('/compte/mot-de-passe', [AccountPasswordController::class, 'edit'])->name('account.password.edit');
     Route::put('/compte/mot-de-passe', [AccountPasswordController::class, 'update'])->name('account.password.update');
 });

@@ -13,10 +13,27 @@ const form = useForm({
     email: props.profil.email ?? "",
 });
 
+const deleteForm = useForm({
+    confirmation: "",
+});
+
 function submit() {
     form.put("/compte", {
         preserveScroll: true,
         onSuccess: () => form.clearErrors(),
+    });
+}
+
+function supprimerCompte() {
+    if (
+        !confirm(
+            "Cette action est irréversible. Tous vos CV et notifications seront supprimés."
+        )
+    ) {
+        return;
+    }
+    deleteForm.delete("/compte", {
+        preserveScroll: true,
     });
 }
 </script>
@@ -82,6 +99,39 @@ function submit() {
             <p class="auth-card__footer" style="margin-top: 1.5rem">
                 <Link href="/compte/mot-de-passe">Changer le mot de passe</Link>
             </p>
+        </div>
+
+        <div
+            class="card auth-card"
+            style="max-width: 520px; margin-top: 2rem"
+        >
+            <h2 class="card__title card__title--sm">Supprimer mon compte</h2>
+            <p class="text-muted">
+                Suppression définitive de votre compte, de vos candidatures et de
+                vos notifications. Cette action est irréversible.
+            </p>
+            <form @submit.prevent="supprimerCompte">
+                <div class="form-group">
+                    <label
+                        >Saisissez <strong>SUPPRIMER</strong> pour
+                        confirmer</label
+                    >
+                    <input
+                        v-model="deleteForm.confirmation"
+                        type="text"
+                        required
+                        autocomplete="off"
+                        placeholder="SUPPRIMER"
+                    />
+                </div>
+                <button
+                    type="submit"
+                    class="btn btn--danger"
+                    :disabled="deleteForm.processing"
+                >
+                    Supprimer définitivement mon compte
+                </button>
+            </form>
         </div>
     </AppLayout>
 </template>

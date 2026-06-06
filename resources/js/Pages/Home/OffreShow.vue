@@ -17,8 +17,10 @@ function copierLien() {
 <template>
     <AppLayout landing>
         <div class="offres-page offres-show-page landing-inner landing-inner--narrow">
-            <p class="offres-back-link">
-                <Link href="/offres">← Autres offres</Link>
+            <p style="margin-bottom: 1.25rem">
+                <Link href="/offres" class="btn btn--accent btn--sm"
+                    >← Autres offres</Link
+                >
             </p>
             <h1>{{ poste.titre }}</h1>
             <p class="text-muted">

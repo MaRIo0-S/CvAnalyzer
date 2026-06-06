@@ -6,6 +6,7 @@ import SearchSelect from "@/Components/SearchSelect.vue";
 import { useCvDecision } from "@/composables/useCvDecision";
 import { useToastStore } from "@/stores/toast";
 import { badgeClassFromCv, filtrerCvs, trierCvs } from "@/utils/cvList";
+import { telechargerZipParPoste } from "@/utils/downloadZip";
 
 const props = defineProps({
     cvs: Array,
@@ -99,13 +100,9 @@ function toggleSelectAll() {
 }
 
 function telechargerZip(ids) {
-    if (!ids?.length) {
+    if (!telechargerZipParPoste(props.zipUrl, ids)) {
         toast.error("Cochez au moins un CV (ou « Tout sélectionner »).");
-        return;
     }
-    const params = new URLSearchParams();
-    ids.forEach((id) => params.append("cv_ids[]", String(id)));
-    window.location.href = `${props.zipUrl}?${params.toString()}`;
 }
 </script>
 

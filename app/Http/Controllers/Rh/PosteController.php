@@ -23,7 +23,15 @@ class PosteController extends Controller
         return Inertia::render('Rh/Postes', [
             'postes' => $this->queryPostesRh($request)
                 ->orderBy('created_at', 'desc')
-                ->get(['id', 'titre', 'description', 'est_ouvert', 'created_at']),
+                ->get(['id', 'titre', 'description', 'est_ouvert', 'created_at'])
+                ->map(fn (Poste $p) => [
+                    'id' => $p->id,
+                    'titre' => $p->titre,
+                    'description' => $p->description,
+                    'est_ouvert' => (bool) $p->est_ouvert,
+                    'created_at' => $p->created_at?->format('d/m/Y'),
+                    'created_at_ts' => $p->created_at?->timestamp ?? 0,
+                ]),
             'entreprise' => $entreprise ? [
                 'id' => $entreprise->id,
                 'nom' => $entreprise->nom,

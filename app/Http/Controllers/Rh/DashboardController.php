@@ -178,7 +178,7 @@ class DashboardController extends Controller
                     continue;
                 }
                 $cv = $cvs->get($cvId);
-                if ($cv && filled($cv->email_candidat)) {
+                if ($cv && $cv->estCandidatConnecte() && filled($cv->email_candidat)) {
                     Mail::to($cv->email_candidat)->send(new ReanalyseCvMail($cv));
                     $nbMails++;
                 }

@@ -24,7 +24,7 @@ class StatutCandidatureMail extends Mailable
 
     public static function envoyer(Cv $cv, StatutCv $statut): bool
     {
-        if (! filled($cv->email_candidat)) {
+        if (! $cv->estCandidatConnecte() || ! filled($cv->email_candidat)) {
             return false;
         }
 

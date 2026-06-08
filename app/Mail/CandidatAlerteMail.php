@@ -53,7 +53,7 @@ class CandidatAlerteMail extends Mailable
 
     public static function envoyerDossier(Cv $cv): bool
     {
-        if (! filled($cv->email_candidat)) {
+        if (! $cv->estCandidatConnecte() || ! filled($cv->email_candidat)) {
             return false;
         }
 

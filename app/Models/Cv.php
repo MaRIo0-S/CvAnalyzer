@@ -77,6 +77,11 @@ class Cv extends Model
         return $this->hasMany(Notification::class);
     }
 
+    public function estCandidatConnecte(): bool
+    {
+        return $this->user_id !== null;
+    }
+
     public function peutModifier(): bool
     {
         return $this->modifiable_jusqu !== null && now()->lt($this->modifiable_jusqu);

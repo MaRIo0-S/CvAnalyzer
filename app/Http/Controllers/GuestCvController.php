@@ -190,13 +190,15 @@ class GuestCvController extends Controller
 
         $message = "CV déposé (dossier n°{$cv->id}). {$graceHours} h pour modifier votre dossier.";
 
-        $mailEnvoye = StatutCandidatureMail::envoyer($cv->fresh(), StatutCv::CvRecu);
-        if ($mailEnvoye) {
-            $message .= ' Un e-mail de confirmation a été envoyé.';
-        } elseif (filled($cv->email_candidat) && config('mail.default', 'log') === 'log') {
-            $message .= ' (E-mail non expédié : configurez SMTP dans .env — MAIL_MAILER=smtp, etc.)';
-        } elseif (! $user) {
-            $message .= ' Sans compte : pas de suivi en ligne ; conservez votre n° de dossier.';
+        if ($user) {
+            $mailEnvoye = StatutCandidatureMail::envoyer($cv->fresh(), StatutCv::CvRecu);
+            if ($mailEnvoye) {
+                $message .= ' Un e-mail de confirmation a été envoyé.';
+            } elseif (filled($cv->email_candidat) && config('mail.default', 'log') === 'log') {
+                $message .= ' (E-mail non expédié : configurez SMTP dans .env — MAIL_MAILER=smtp, etc.)';
+            }
+        } else {
+            $message .= ' Sans compte : pas de suivi en ligne ni e-mail ; conservez votre n° de dossier.';
         }
 
         return redirect()->route('guest.deposer')->with('success', $message);
@@ -275,7 +277,9 @@ class GuestCvController extends Controller
         $cv->update($data);
         $cv->refresh();
 
-        CandidatAlerteMail::envoyerDossier($cv);
+        if ($user) {
+            CandidatAlerteMail::envoyerDossier($cv);
+        }
 
         return back()->with('success', 'Candidature mise à jour. Modifiable jusqu\'au '.$cv->modifiable_jusqu->format('d/m/Y H:i').'.');
     }

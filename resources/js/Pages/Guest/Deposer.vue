@@ -199,9 +199,9 @@ function onModifyFile(event) {
                     >) : suivi du statut + e-mails automatiques.
                 </li>
                 <li>
-                    <strong>Sans compte</strong> : pas de suivi en ligne ; un
-                    e-mail de confirmation est envoyé si vous indiquez une
-                    adresse valide.
+                    <strong>Sans compte</strong> : dépôt uniquement — pas de
+                    suivi en ligne, pas d'e-mail ni de notification. Conservez
+                    votre n° de dossier.
                 </li>
             </ul>
         </div>

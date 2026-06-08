@@ -109,7 +109,7 @@ const faqCandidat = [
     },
     {
         q: "Comment savoir où en est ma candidature ?",
-        a: "Connectez-vous à votre espace candidat ou consultez les e-mails envoyés automatiquement à chaque changement de statut.",
+        a: "Avec un compte : connectez-vous à votre espace candidat ou consultez les e-mails et notifications à chaque changement de statut. Sans compte, aucun suivi en ligne n'est disponible.",
     },
     {
         q: "Que se passe-t-il si je postule sans compte ?",

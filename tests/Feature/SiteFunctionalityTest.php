@@ -11,6 +11,7 @@ use App\Models\Poste;
 use App\Models\User;
 use Database\Seeders\DemoDataSeeder;
 use App\Mail\CandidatAlerteMail;
+use App\Mail\StatutCandidatureMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -411,6 +412,8 @@ class SiteFunctionalityTest extends TestCase
 
     public function test_deposer_cv_invite_avec_fichier(): void
     {
+        Mail::fake();
+
         $poste = Poste::whereHas('entreprise', fn ($q) => $q->where('nom', 'TechCorp'))->first();
 
         $this->get(route('offres.show', $poste))->assertOk();
@@ -429,7 +432,32 @@ class SiteFunctionalityTest extends TestCase
             'email_candidat' => 'invite.test@email.test',
             'nom_candidat' => 'Invité Test',
             'statut' => StatutCv::CvRecu->value,
+            'user_id' => null,
         ]);
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_deposer_cv_candidat_connecte_envoie_email(): void
+    {
+        Mail::fake();
+
+        $poste = Poste::whereHas('entreprise', fn ($q) => $q->where('nom', 'TechCorp'))->first();
+        $candidat = User::where('email', 'candidat@cvapp.test')->first();
+
+        $this->actingAs($candidat)->get(route('offres.show', $poste))->assertOk();
+
+        $file = UploadedFile::fake()->create('cv-candidat.pdf', 100, 'application/pdf');
+
+        $this->actingAs($candidat)->post(route('guest.deposer.store'), [
+            'nom_candidat' => $candidat->name,
+            'email_candidat' => $candidat->email,
+            'entreprise_id' => $poste->entreprise_id,
+            'poste_id' => $poste->id,
+            'fichier' => $file,
+        ])->assertRedirect(route('guest.deposer'));
+
+        Mail::assertSent(StatutCandidatureMail::class);
     }
 
     public function test_staff_redirige_de_deposer(): void

@@ -13,10 +13,12 @@ class RedirectStaffFromDepot
     {
         $user = $request->user();
 
-        if ($user && in_array($user->role, [Role::Admin, Role::SousAdmin], true)) {
-            return redirect()->route(
-                $user->role === Role::Admin ? 'admin.super-admins' : 'rh.dashboard'
-            );
+        if ($user && in_array($user->role, [Role::SuperAdmin, Role::Admin, Role::SousAdmin], true)) {
+            return redirect()->route(match ($user->role) {
+                Role::SuperAdmin => 'admin.backoffice',
+                Role::Admin => 'gerant.dashboard',
+                Role::SousAdmin => 'rh.dashboard',
+            });
         }
 
         return $next($request);

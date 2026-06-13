@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 
@@ -9,21 +8,21 @@ return new class extends Migration
     public function up(): void
     {
         User::query()
-            ->where('role', Role::SuperAdmin)
+            ->where('role', 'super_admin')
             ->whereNull('admin_id')
             ->each(function (User $gerant) {
-                $admin = User::where('role', Role::Admin)->orderBy('id')->first();
-                if ($admin) {
-                    $gerant->update(['admin_id' => $admin->id]);
+                $platform = User::where('role', 'admin')->orderBy('id')->first();
+                if ($platform) {
+                    $gerant->update(['admin_id' => $platform->id]);
                 }
             });
 
         User::query()
-            ->where('role', Role::SousAdmin)
+            ->where('role', 'sous_admin')
             ->whereNull('super_admin_id')
             ->each(function (User $rh) {
                 $gerant = User::query()
-                    ->where('role', Role::SuperAdmin)
+                    ->where('role', 'super_admin')
                     ->where('entreprise_id', $rh->entreprise_id)
                     ->first();
 

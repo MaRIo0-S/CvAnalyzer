@@ -17,15 +17,15 @@ export function useStaffPaths() {
             gerant,
             adminBackOffice: `${admin}/back-office`,
             adminMessages: `${admin}/messages-contact`,
-            adminGerants: `${admin}/super-admins`,
+            adminGerants: `${admin}/gerants`,
             adminExport: `${admin}/back-office/export`,
             gerantDashboard: gerant,
             gerantRh: `${gerant}/rh`,
             gerantEntreprise: `${gerant}/entreprise`,
             gerantExportRh: `${gerant}/export/rh`,
             gerantRhEdit: (id) => `${gerant}/rh/${id}/edit`,
-            adminGerantEdit: (id) => `${admin}/super-admins/${id}/edit`,
-            adminGerantToggle: (id) => `${admin}/super-admins/${id}/actif`,
+            adminGerantEdit: (id) => `${admin}/gerants/${id}/edit`,
+            adminGerantToggle: (id) => `${admin}/gerants/${id}/actif`,
         };
     });
 }

@@ -10,23 +10,23 @@ use Inertia\Inertia;
 
 class PortalLoginController extends Controller
 {
-    public function showAdminLogin()
-    {
-        return Inertia::render('Auth/LoginPortal', [
-            'portal' => 'admin',
-            'title' => 'Connexion administrateur plateforme',
-            'subtitle' => 'Réservé aux administrateurs CvAnalyzer.',
-            'action' => route('login.admin.store'),
-        ]);
-    }
-
     public function showSuperAdminLogin()
     {
         return Inertia::render('Auth/LoginPortal', [
             'portal' => 'super_admin',
-            'title' => 'Connexion gérant entreprise',
-            'subtitle' => 'Responsable RH / super-admin de votre société.',
+            'title' => 'Connexion super administrateur',
+            'subtitle' => 'Administrateur global de la plateforme CvAnalyzer (gère les gérants).',
             'action' => route('login.super-admin.store'),
+        ]);
+    }
+
+    public function showGerantLogin()
+    {
+        return Inertia::render('Auth/LoginPortal', [
+            'portal' => 'admin',
+            'title' => 'Connexion gérant entreprise',
+            'subtitle' => 'Gérant de votre entreprise (supervision, équipe RH).',
+            'action' => route('login.gerant.store'),
         ]);
     }
 
@@ -37,14 +37,14 @@ class PortalLoginController extends Controller
         ]);
     }
 
-    public function loginAdmin(Request $request)
-    {
-        return $this->attempt($request, [Role::Admin], 'admin.backoffice');
-    }
-
     public function loginSuperAdmin(Request $request)
     {
-        return $this->attempt($request, [Role::SuperAdmin], 'super-admin.dashboard');
+        return $this->attempt($request, [Role::SuperAdmin], 'admin.backoffice');
+    }
+
+    public function loginGerant(Request $request)
+    {
+        return $this->attempt($request, [Role::Admin], 'gerant.dashboard');
     }
 
     public function loginStaff(Request $request)
@@ -93,8 +93,8 @@ class PortalLoginController extends Controller
     private function homeForRole(Role $role): string
     {
         return match ($role) {
-            Role::Admin => route('admin.backoffice'),
-            Role::SuperAdmin => route('super-admin.dashboard'),
+            Role::SuperAdmin => route('admin.backoffice'),
+            Role::Admin => route('gerant.dashboard'),
             Role::SousAdmin => route('rh.dashboard'),
             Role::Candidat => route('candidat.statut'),
         };

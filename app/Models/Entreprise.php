@@ -46,7 +46,7 @@ class Entreprise extends Model
 
     public function gerants(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', Role::SuperAdmin);
+        return $this->hasMany(User::class)->where('role', Role::Admin);
     }
 
     public function scopeAvecRh(Builder $query): Builder

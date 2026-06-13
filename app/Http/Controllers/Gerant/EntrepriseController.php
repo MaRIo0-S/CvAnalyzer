@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Gerant;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -12,7 +12,7 @@ class EntrepriseController extends Controller
     {
         $entreprise = $request->user()->entreprise;
 
-        return Inertia::render('SuperAdmin/Entreprise', [
+        return Inertia::render('Gerant/Entreprise', [
             'entreprise' => $entreprise ? [
                 'nom' => $entreprise->nom,
                 'description' => $entreprise->description,

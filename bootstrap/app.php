@@ -25,10 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             $gerantPrefix = trim(config('cvanalyzer.gerant_app_prefix'), '/');
 
             if ($request->is($adminPrefix, $adminPrefix.'/*')) {
-                return route('login.admin');
+                return route('login.super-admin');
             }
             if ($request->is($gerantPrefix, $gerantPrefix.'/*')) {
-                return route('login.super-admin');
+                return route('login.gerant');
             }
 
             return route('login');

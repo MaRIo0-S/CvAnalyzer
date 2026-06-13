@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Gerant;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
@@ -18,7 +18,7 @@ class RhTeamController extends Controller
     {
         $gerant = $request->user();
 
-        return Inertia::render('SuperAdmin/RhTeam', [
+        return Inertia::render('Gerant/RhTeam', [
             'entreprise' => $gerant->entreprise?->only(['id', 'nom']),
             'rhList' => User::where('role', Role::SousAdmin)
                 ->where('super_admin_id', $gerant->id)
@@ -66,7 +66,7 @@ class RhTeamController extends Controller
         $this->authorizeRh($rh);
         $gerant = auth()->user();
 
-        return Inertia::render('SuperAdmin/RhEdit', [
+        return Inertia::render('Gerant/RhEdit', [
             'entreprise' => $gerant->entreprise?->only(['id', 'nom']),
             'rh' => [
                 'id' => $rh->id,
@@ -103,7 +103,7 @@ class RhTeamController extends Controller
         $rh->save();
 
         return redirect()
-            ->route('super-admin.rh.index')
+            ->route('gerant.rh.index')
             ->with('success', 'Profil RH mis à jour.');
     }
 

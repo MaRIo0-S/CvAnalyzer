@@ -39,7 +39,7 @@ class PosteController extends Controller
                 'description_updated_at' => $entreprise->description_updated_at?->format('d/m/Y à H:i'),
                 'description_updated_by' => $entreprise->descriptionUpdatedBy?->name,
             ] : null,
-            'peutModifierEntreprise' => $request->user()->isSuperAdmin(),
+            'peutModifierEntreprise' => $request->user()->isGerant(),
             'rhColleguesCount' => User::where('role', Role::SousAdmin)
                 ->where('entreprise_id', $entrepriseId)
                 ->where('est_actif', true)

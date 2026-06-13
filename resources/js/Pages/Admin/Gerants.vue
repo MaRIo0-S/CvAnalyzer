@@ -9,7 +9,7 @@ import { useStaffPaths } from "@/composables/useStaffPaths";
 const paths = useStaffPaths();
 
 const props = defineProps({
-    superAdmins: Array,
+    gerants: Array,
     entreprises: Array,
 });
 
@@ -29,7 +29,7 @@ const entrepriseItems = computed(() => {
         id: e.nom,
         label: e.nom,
     }));
-    const fromGerants = (props.superAdmins || [])
+    const fromGerants = (props.gerants || [])
         .map((g) => g.entreprise)
         .filter(Boolean)
         .map((nom) => ({ id: nom, label: nom }));
@@ -51,7 +51,7 @@ const filtreEntreprise = ref("");
 const filtreActif = ref("");
 
 const listeFiltree = computed(() => {
-    let list = [...(props.superAdmins || [])];
+    let list = [...(props.gerants || [])];
     const q = recherche.value.trim().toLowerCase();
     if (q) {
         list = list.filter(
@@ -74,7 +74,7 @@ const listeFiltree = computed(() => {
 });
 
 const entrepriseFilterItems = computed(() =>
-    [...new Set((props.superAdmins || []).map((g) => g.entreprise))]
+    [...new Set((props.gerants || []).map((g) => g.entreprise))]
         .filter(Boolean)
         .map((nom) => ({ id: nom, label: nom }))
 );
@@ -84,7 +84,7 @@ const entrepriseFilterItems = computed(() =>
     <AppLayout>
         <div class="page-header">
             <p class="page-header__label">Administration plateforme</p>
-            <h1>Gérants (super-admin)</h1>
+            <h1>Gérants entreprise</h1>
             <p>
                 Créez le responsable d'une entreprise. Il gère les RH et la
                 description de l'entreprise.

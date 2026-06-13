@@ -1,5 +1,5 @@
 <script setup>
-import { useForm } from "@inertiajs/vue3";
+import { Link, useForm } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { useStaffPaths } from "@/composables/useStaffPaths";
 
@@ -13,6 +13,10 @@ const form = useForm({
 
 <template>
     <AppLayout>
+        <p class="offres-back-link">
+            <Link :href="paths.gerantDashboard">← Retour au back-office</Link>
+        </p>
+
         <div class="page-header">
             <p class="page-header__label">Gérant</p>
             <h1>{{ entreprise?.nom }} — présentation</h1>

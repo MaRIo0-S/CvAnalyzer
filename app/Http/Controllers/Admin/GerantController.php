@@ -10,14 +10,15 @@ use App\Services\UserDeactivationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class SuperAdminController extends Controller
+class GerantController extends Controller
 {
     public function __construct(private UserDeactivationService $deactivation) {}
+
     public function index()
     {
-        return Inertia::render('Admin/SuperAdmins', [
+        return Inertia::render('Admin/Gerants', [
             'entreprises' => Entreprise::orderBy('nom')->get(['id', 'nom']),
-            'superAdmins' => User::where('role', Role::SuperAdmin)
+            'gerants' => User::where('role', Role::Admin)
                 ->where('admin_id', auth()->id())
                 ->with(['entreprise:id,nom', 'rhEquipe:id,super_admin_id,name,email,telephone,est_actif'])
                 ->orderBy('name')
@@ -54,18 +55,18 @@ class SuperAdminController extends Controller
             'email' => $validated['email'],
             'telephone' => $validated['telephone'] ?? null,
             'password' => $validated['password'],
-            'role' => Role::SuperAdmin,
+            'role' => Role::Admin,
             'admin_id' => $request->user()->id,
             'entreprise_id' => $entreprise->id,
             'est_actif' => true,
         ]);
 
-        return back()->with('success', 'Gérant (super-admin) ajouté pour « '.$entreprise->nom.' ».');
+        return back()->with('success', 'Gérant ajouté pour « '.$entreprise->nom.' ».');
     }
 
     public function edit(User $user)
     {
-        if ($user->admin_id !== auth()->id() || $user->role !== Role::SuperAdmin) {
+        if ($user->admin_id !== auth()->id() || $user->role !== Role::Admin) {
             abort(403);
         }
 
@@ -84,7 +85,7 @@ class SuperAdminController extends Controller
 
     public function update(Request $request, User $user)
     {
-        if ($user->admin_id !== auth()->id() || $user->role !== Role::SuperAdmin) {
+        if ($user->admin_id !== auth()->id() || $user->role !== Role::Admin) {
             abort(403);
         }
 
@@ -112,13 +113,13 @@ class SuperAdminController extends Controller
         $user->save();
 
         return redirect()
-            ->route('admin.super-admins')
+            ->route('admin.gerants')
             ->with('success', 'Gérant mis à jour.');
     }
 
     public function toggleActif(User $user)
     {
-        if ($user->admin_id !== auth()->id() || $user->role !== Role::SuperAdmin) {
+        if ($user->admin_id !== auth()->id() || $user->role !== Role::Admin) {
             abort(403);
         }
 
@@ -141,7 +142,7 @@ class SuperAdminController extends Controller
 
     public function destroy(User $user)
     {
-        if ($user->admin_id !== auth()->id() || $user->role !== Role::SuperAdmin) {
+        if ($user->admin_id !== auth()->id() || $user->role !== Role::Admin) {
             abort(403);
         }
 

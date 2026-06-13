@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Gerant;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
@@ -18,7 +18,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $gerant = $request->user();
-        $entrepriseId = (int) $gerant->entreprise_id;
+        $rhIds = $this->rhIdsDuGerant($gerant);
 
         $rhList = User::where('role', Role::SousAdmin)
             ->where('super_admin_id', $gerant->id)
@@ -34,20 +34,22 @@ class DashboardController extends Controller
                 'postes_count' => Poste::where('user_id', $u->id)->count(),
             ]);
 
-        return Inertia::render('SuperAdmin/Dashboard', [
+        $postesQuery = Poste::query()->whereIn('user_id', $rhIds);
+
+        return Inertia::render('Gerant/Dashboard', [
             'entreprise' => $gerant->entreprise?->only(['id', 'nom']),
             'stats' => [
                 'rh_total' => $rhList->count(),
                 'rh_actifs' => $rhList->where('est_actif', true)->count(),
-                'postes_ouverts' => $gerant->entreprise?->postes()->where('est_ouvert', true)->count() ?? 0,
-                'postes_total' => $gerant->entreprise?->postes()->count() ?? 0,
-                'cvs_recus' => $entrepriseId ? Cv::where('entreprise_id', $entrepriseId)->count() : 0,
+                'postes_ouverts' => (clone $postesQuery)->where('est_ouvert', true)->count(),
+                'postes_total' => (clone $postesQuery)->count(),
+                'cvs_recus' => $this->cvsEquipeQuery($rhIds)->count(),
                 'sessions_rh' => count($this->sessionsRhActives($gerant->id)),
                 'session_minutes' => (int) config('session.lifetime', 120),
             ],
             'rhList' => $rhList->values(),
-            'lignesCandidats' => $this->lignesCandidats($entrepriseId),
-            'lignesPostes' => $this->lignesPostes($entrepriseId),
+            'lignesCandidats' => $this->lignesCandidats($rhIds),
+            'lignesPostes' => $this->lignesPostes($rhIds),
             'sessionsRh' => $this->sessionsRhActives($gerant->id),
         ]);
     }
@@ -55,7 +57,7 @@ class DashboardController extends Controller
     public function exportExcel(Request $request): StreamedResponse
     {
         $gerant = $request->user();
-        $entrepriseId = (int) $gerant->entreprise_id;
+        $rhIds = $this->rhIdsDuGerant($gerant);
         $nomEntreprise = $gerant->entreprise?->nom ?? '—';
 
         $rhRows = User::where('role', Role::SousAdmin)
@@ -73,7 +75,7 @@ class DashboardController extends Controller
             ])
             ->all();
 
-        $candidatRows = collect($this->lignesCandidats($entrepriseId))
+        $candidatRows = collect($this->lignesCandidats($rhIds))
             ->map(fn (array $l) => [
                 (string) $l['numero_dossier'],
                 $l['nom'],
@@ -87,7 +89,7 @@ class DashboardController extends Controller
             ])
             ->all();
 
-        $posteRows = collect($this->lignesPostes($entrepriseId))
+        $posteRows = collect($this->lignesPostes($rhIds))
             ->map(fn (array $l) => [
                 $l['titre'],
                 $l['rh_nom'],
@@ -98,11 +100,13 @@ class DashboardController extends Controller
             ])
             ->all();
 
+        $postesQuery = Poste::query()->whereIn('user_id', $rhIds);
+
         $indicateurs = [
             ['RH actifs', (string) User::where('role', Role::SousAdmin)->where('super_admin_id', $gerant->id)->where('est_actif', true)->count()],
             ['RH total', (string) count($rhRows)],
-            ['Postes ouverts', (string) ($gerant->entreprise?->postes()->where('est_ouvert', true)->count() ?? 0)],
-            ['CV reçus', (string) ($entrepriseId ? Cv::where('entreprise_id', $entrepriseId)->count() : 0)],
+            ['Postes ouverts', (string) (clone $postesQuery)->where('est_ouvert', true)->count()],
+            ['CV reçus', (string) $this->cvsEquipeQuery($rhIds)->count()],
         ];
 
         return ExcelExporter::download('back-office-gerant.xlsx', [
@@ -154,17 +158,33 @@ class DashboardController extends Controller
         ]);
     }
 
+    /** @return array<int, int> */
+    private function rhIdsDuGerant(User $gerant): array
+    {
+        return User::query()
+            ->where('role', Role::SousAdmin)
+            ->where('super_admin_id', $gerant->id)
+            ->pluck('id')
+            ->all();
+    }
+
+    /** @param  array<int, int>  $rhIds */
+    private function cvsEquipeQuery(array $rhIds)
+    {
+        return Cv::query()->whereHas('poste', fn ($q) => $q->whereIn('user_id', $rhIds));
+    }
+
     /**
+     * @param  array<int, int>  $rhIds
      * @return array<int, array<string, mixed>>
      */
-    private function lignesCandidats(int $entrepriseId): array
+    private function lignesCandidats(array $rhIds): array
     {
-        if (! $entrepriseId) {
+        if ($rhIds === []) {
             return [];
         }
 
-        return Cv::query()
-            ->where('entreprise_id', $entrepriseId)
+        return $this->cvsEquipeQuery($rhIds)
             ->with(['poste.createur:id,name,email', 'candidat:id,name,email'])
             ->orderByDesc('date_depot')
             ->get()
@@ -193,16 +213,17 @@ class DashboardController extends Controller
     }
 
     /**
+     * @param  array<int, int>  $rhIds
      * @return array<int, array<string, mixed>>
      */
-    private function lignesPostes(int $entrepriseId): array
+    private function lignesPostes(array $rhIds): array
     {
-        if (! $entrepriseId) {
+        if ($rhIds === []) {
             return [];
         }
 
         return Poste::query()
-            ->where('entreprise_id', $entrepriseId)
+            ->whereIn('user_id', $rhIds)
             ->with('createur:id,name,email')
             ->withCount('cvs')
             ->orderBy('titre')

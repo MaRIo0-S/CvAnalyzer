@@ -33,7 +33,7 @@ class DemoDataSeeder extends Seeder
             [
                 'name' => 'Admin Principal',
                 'password' => $demoPassword,
-                'role' => Role::Admin,
+                'role' => Role::SuperAdmin,
                 'entreprise_id' => null,
             ]
         );
@@ -57,7 +57,7 @@ class DemoDataSeeder extends Seeder
                 'name' => 'Luc Gérant TechCorp',
                 'telephone' => '+33601020304',
                 'password' => $demoPassword,
-                'role' => Role::SuperAdmin,
+                'role' => Role::Admin,
                 'admin_id' => $admin->id,
                 'entreprise_id' => $techCorp->id,
                 'est_actif' => true,
@@ -70,7 +70,7 @@ class DemoDataSeeder extends Seeder
                 'name' => 'Nadia Gérant DataSoft',
                 'telephone' => '+33605060708',
                 'password' => $demoPassword,
-                'role' => Role::SuperAdmin,
+                'role' => Role::Admin,
                 'admin_id' => $admin->id,
                 'entreprise_id' => $dataSoft->id,
                 'est_actif' => true,

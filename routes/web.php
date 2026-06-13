@@ -4,12 +4,15 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountEmailVerifyController;
 use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\Admin\BackOfficeController;
+use App\Http\Controllers\Admin\GerantController;
 use App\Http\Controllers\Admin\MessageContactController;
-use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Auth\PortalLoginController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CandidatController;
 use App\Http\Controllers\CandidatNotificationController;
+use App\Http\Controllers\Gerant\DashboardController as GerantDashboardController;
+use App\Http\Controllers\Gerant\EntrepriseController as GerantEntrepriseController;
+use App\Http\Controllers\Gerant\RhTeamController as GerantRhTeamController;
 use App\Http\Controllers\GuestCvController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegisterController;
@@ -17,9 +20,6 @@ use App\Http\Controllers\Rh\CvController;
 use App\Http\Controllers\Rh\CvImportController;
 use App\Http\Controllers\Rh\DashboardController;
 use App\Http\Controllers\Rh\PosteController;
-use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
-use App\Http\Controllers\SuperAdmin\EntrepriseController as SuperAdminEntrepriseController;
-use App\Http\Controllers\SuperAdmin\RhTeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -30,13 +30,13 @@ Route::post('/contact', [HomeController::class, 'contact'])->name('home.contact'
 Route::get('/login', [PortalLoginController::class, 'showStaffLogin'])->name('login');
 Route::post('/login', [PortalLoginController::class, 'loginStaff'])->name('login.store');
 
-$adminLoginPath = config('cvanalyzer.admin_login_path');
+$superAdminLoginPath = config('cvanalyzer.super_admin_login_path');
 $gerantLoginPath = config('cvanalyzer.gerant_login_path');
 
-Route::get($adminLoginPath, [PortalLoginController::class, 'showAdminLogin'])->name('login.admin');
-Route::post($adminLoginPath, [PortalLoginController::class, 'loginAdmin'])->name('login.admin.store');
-Route::get($gerantLoginPath, [PortalLoginController::class, 'showSuperAdminLogin'])->name('login.super-admin');
-Route::post($gerantLoginPath, [PortalLoginController::class, 'loginSuperAdmin'])->name('login.super-admin.store');
+Route::get($superAdminLoginPath, [PortalLoginController::class, 'showSuperAdminLogin'])->name('login.super-admin');
+Route::post($superAdminLoginPath, [PortalLoginController::class, 'loginSuperAdmin'])->name('login.super-admin.store');
+Route::get($gerantLoginPath, [PortalLoginController::class, 'showGerantLogin'])->name('login.gerant');
+Route::post($gerantLoginPath, [PortalLoginController::class, 'loginGerant'])->name('login.gerant.store');
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
@@ -69,7 +69,7 @@ Route::middleware(['auth', 'active', 'role:candidat'])->prefix('candidat')->grou
         ->name('candidat.notifications.tout-lu');
 });
 
-Route::middleware(['auth', 'active', 'role:sous_admin,super_admin'])->prefix('rh')->group(function () {
+Route::middleware(['auth', 'active', 'role:sous_admin,admin'])->prefix('rh')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('rh.dashboard');
     Route::get('/cvs', [DashboardController::class, 'filtrerPage'])->name('rh.filtrer.page');
     Route::post('/filtrer', [DashboardController::class, 'filtrer'])->name('rh.filtrer');
@@ -96,35 +96,36 @@ Route::middleware(['auth', 'active', 'role:sous_admin,super_admin'])->prefix('rh
 $gerantAppPrefix = trim(config('cvanalyzer.gerant_app_prefix'), '/');
 $adminAppPrefix = trim(config('cvanalyzer.admin_app_prefix'), '/');
 
-Route::middleware(['auth', 'active', 'role:super_admin'])->prefix($gerantAppPrefix)->group(function () {
-    Route::get('/', [SuperAdminDashboardController::class, 'index'])->name('super-admin.dashboard');
-    Route::get('/export/rh', [SuperAdminDashboardController::class, 'exportExcel'])->name('super-admin.export.rh');
-    Route::get('/rh', [RhTeamController::class, 'index'])->name('super-admin.rh.index');
-    Route::post('/rh', [RhTeamController::class, 'store'])->name('super-admin.rh.store');
-    Route::get('/rh/{rh}/edit', [RhTeamController::class, 'edit'])->name('super-admin.rh.edit');
-    Route::put('/rh/{rh}', [RhTeamController::class, 'update'])->name('super-admin.rh.update');
-    Route::patch('/rh/{rh}/actif', [RhTeamController::class, 'toggleActif'])->name('super-admin.rh.toggle');
-    Route::delete('/rh/{rh}', [RhTeamController::class, 'destroy'])->name('super-admin.rh.destroy');
-    Route::get('/entreprise', [SuperAdminEntrepriseController::class, 'edit'])->name('super-admin.entreprise');
-    Route::put('/entreprise', [SuperAdminEntrepriseController::class, 'update'])->name('super-admin.entreprise.update');
+Route::middleware(['auth', 'active', 'role:admin'])->prefix($gerantAppPrefix)->group(function () {
+    Route::get('/', [GerantDashboardController::class, 'index'])->name('gerant.dashboard');
+    Route::get('/export/rh', [GerantDashboardController::class, 'exportExcel'])->name('gerant.export.rh');
+    Route::get('/rh', [GerantRhTeamController::class, 'index'])->name('gerant.rh.index');
+    Route::post('/rh', [GerantRhTeamController::class, 'store'])->name('gerant.rh.store');
+    Route::get('/rh/{rh}/edit', [GerantRhTeamController::class, 'edit'])->name('gerant.rh.edit');
+    Route::put('/rh/{rh}', [GerantRhTeamController::class, 'update'])->name('gerant.rh.update');
+    Route::patch('/rh/{rh}/actif', [GerantRhTeamController::class, 'toggleActif'])->name('gerant.rh.toggle');
+    Route::delete('/rh/{rh}', [GerantRhTeamController::class, 'destroy'])->name('gerant.rh.destroy');
+    Route::get('/entreprise', [GerantEntrepriseController::class, 'edit'])->name('gerant.entreprise');
+    Route::put('/entreprise', [GerantEntrepriseController::class, 'update'])->name('gerant.entreprise.update');
 });
 
-Route::middleware(['auth', 'active', 'role:admin'])->prefix($adminAppPrefix)->group(function () use ($adminAppPrefix) {
+Route::middleware(['auth', 'active', 'role:super_admin'])->prefix($adminAppPrefix)->group(function () use ($adminAppPrefix) {
     Route::get('/back-office', [BackOfficeController::class, 'index'])->name('admin.backoffice');
     Route::get('/back-office/export', [BackOfficeController::class, 'exportExcel'])->name('admin.backoffice.export');
     Route::get('/messages-contact', [MessageContactController::class, 'index'])->name('admin.messages-contact');
     Route::patch('/messages-contact/{messageContact}/lu', [MessageContactController::class, 'marquerLu'])
         ->name('admin.messages-contact.lu');
-    Route::get('/super-admins', [SuperAdminController::class, 'index'])->name('admin.super-admins');
-    Route::post('/super-admins', [SuperAdminController::class, 'store'])->name('admin.super-admins.store');
-    Route::get('/super-admins/{user}/edit', [SuperAdminController::class, 'edit'])->name('admin.super-admins.edit');
-    Route::put('/super-admins/{user}', [SuperAdminController::class, 'update'])->name('admin.super-admins.update');
-    Route::patch('/super-admins/{user}/actif', [SuperAdminController::class, 'toggleActif'])->name('admin.super-admins.toggle');
-    Route::delete('/super-admins/{user}', [SuperAdminController::class, 'destroy'])->name('admin.super-admins.destroy');
-    Route::redirect('/sous-admins', '/'.$adminAppPrefix.'/super-admins');
+    Route::get('/gerants', [GerantController::class, 'index'])->name('admin.gerants');
+    Route::post('/gerants', [GerantController::class, 'store'])->name('admin.gerants.store');
+    Route::get('/gerants/{user}/edit', [GerantController::class, 'edit'])->name('admin.gerants.edit');
+    Route::put('/gerants/{user}', [GerantController::class, 'update'])->name('admin.gerants.update');
+    Route::patch('/gerants/{user}/actif', [GerantController::class, 'toggleActif'])->name('admin.gerants.toggle');
+    Route::delete('/gerants/{user}', [GerantController::class, 'destroy'])->name('admin.gerants.destroy');
+    Route::redirect('/super-admins', '/'.$adminAppPrefix.'/gerants');
+    Route::redirect('/sous-admins', '/'.$adminAppPrefix.'/gerants');
 });
 
-Route::any('super-admin', fn () => abort(404));
-Route::any('super-admin/{any}', fn () => abort(404))->where('any', '.*');
+Route::redirect('super-admin', '/'.$gerantAppPrefix);
+Route::redirect('super-admin/{any}', '/'.$gerantAppPrefix)->where('any', '.*');
 Route::any('admin', fn () => abort(404));
 Route::any('admin/{any}', fn () => abort(404))->where('any', '.*');

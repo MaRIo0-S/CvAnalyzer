@@ -26,22 +26,22 @@ class BackOfficeController extends Controller
         return Inertia::render('Admin/BackOffice', [
             'stats' => [
                 'entreprises' => Entreprise::count(),
-                'gerants' => User::where('role', Role::SuperAdmin)->where('admin_id', $adminId)->count(),
+                'gerants' => User::where('role', Role::Admin)->where('admin_id', $adminId)->count(),
                 'rh' => User::where('role', Role::SousAdmin)
-                    ->whereHas('superAdmin', fn ($q) => $q->where('admin_id', $adminId))
+                    ->whereHas('gerant', fn ($q) => $q->where('admin_id', $adminId))
                     ->count(),
                 'candidats' => User::where('role', Role::Candidat)->count(),
                 'cvs' => Cv::count(),
                 'postes_ouverts' => Poste::where('est_ouvert', true)->count(),
                 'sessions_rh' => count($this->sessionsActives(Role::SousAdmin)),
-                'sessions_gerants' => count($this->sessionsActives(Role::SuperAdmin)),
+                'sessions_gerants' => count($this->sessionsActives(Role::Admin)),
                 'session_minutes' => (int) config('session.lifetime', 120),
                 'messages_contact' => MessageContact::count(),
                 'messages_contact_non_lus' => MessageContact::where('lu', false)->count(),
             ],
             'lignes' => $lignes,
             'sessionsRh' => $this->sessionsActives(Role::SousAdmin),
-            'sessionsGerants' => $this->sessionsActives(Role::SuperAdmin),
+            'sessionsGerants' => $this->sessionsActives(Role::Admin),
         ]);
     }
 
@@ -67,9 +67,9 @@ class BackOfficeController extends Controller
 
         $indicateurs = [
             ['Entreprises', (string) Entreprise::count()],
-            ['Gérants', (string) User::where('role', Role::SuperAdmin)->where('admin_id', $adminId)->count()],
+            ['Gérants', (string) User::where('role', Role::Admin)->where('admin_id', $adminId)->count()],
             ['RH', (string) User::where('role', Role::SousAdmin)
-                ->whereHas('superAdmin', fn ($q) => $q->where('admin_id', $adminId))
+                ->whereHas('gerant', fn ($q) => $q->where('admin_id', $adminId))
                 ->count()],
             ['CV déposés (total)', (string) Cv::count()],
             ['Messages contact non lus', (string) MessageContact::where('lu', false)->count()],
@@ -102,7 +102,7 @@ class BackOfficeController extends Controller
     private function lignesOrganisation(int $adminId): array
     {
         $gerants = User::query()
-            ->where('role', Role::SuperAdmin)
+            ->where('role', Role::Admin)
             ->where('admin_id', $adminId)
             ->with(['entreprise', 'rhEquipe'])
             ->orderBy('name')

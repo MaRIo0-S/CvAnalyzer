@@ -13,7 +13,7 @@ class UserDeactivationService
      */
     public function deactivateGerant(User $gerant): void
     {
-        if ($gerant->role !== Role::SuperAdmin) {
+        if ($gerant->role !== Role::Admin) {
             return;
         }
 
@@ -44,7 +44,7 @@ class UserDeactivationService
      */
     public function reactivateGerant(User $gerant): void
     {
-        if ($gerant->role !== Role::SuperAdmin) {
+        if ($gerant->role !== Role::Admin) {
             return;
         }
 

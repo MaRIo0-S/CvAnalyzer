@@ -17,8 +17,8 @@ class HomeController extends Controller
     {
         if ($user = $request->user()) {
             return match ($user->role) {
-                Role::Admin => redirect()->route('admin.backoffice'),
-                Role::SuperAdmin => redirect()->route('super-admin.dashboard'),
+                Role::SuperAdmin => redirect()->route('admin.backoffice'),
+                Role::Admin => redirect()->route('gerant.dashboard'),
                 Role::SousAdmin => redirect()->route('rh.dashboard'),
                 Role::Candidat => redirect()->route('candidat.statut'),
             };

@@ -27,7 +27,7 @@ const peutVoirOffres = computed(() => {
 
 const peutCompte = computed(() => {
     if (!user.value) return false;
-    return user.value.role === "candidat" || user.value.role === "super_admin";
+    return user.value.role === "candidat" || user.value.role === "admin";
 });
 
 const currentPath = computed(() => page.url.split("?")[0]);
@@ -68,7 +68,7 @@ function isNavActive(href) {
     }
     if (href === paths.value.adminGerants) {
         return (
-            p.startsWith(`${paths.value.admin}/super-admins`) ||
+            p.startsWith(`${paths.value.admin}/gerants`) ||
             p.startsWith(`${paths.value.admin}/sous-admins`)
         );
     }
@@ -155,9 +155,9 @@ const homeUrl = computed(() => {
     }
 
     switch (user.value.role) {
-        case "admin":
-            return paths.value.adminBackOffice;
         case "super_admin":
+            return paths.value.adminBackOffice;
+        case "admin":
             return paths.value.gerantDashboard;
         case "sous_admin":
             return "/rh";
@@ -214,7 +214,7 @@ const homeUrl = computed(() => {
                     >Offres d'emploi</Link
                 >
                 <template v-if="user">
-                    <template v-if="user.role === 'admin'">
+                    <template v-if="user.role === 'super_admin'">
                         <Link
                             :href="paths.adminBackOffice"
                             :class="navLinkClass(paths.adminBackOffice)"
@@ -234,7 +234,7 @@ const homeUrl = computed(() => {
                             >Gérants</Link
                         >
                     </template>
-                    <template v-else-if="user.role === 'super_admin'">
+                    <template v-else-if="user.role === 'admin'">
                         <Link
                             :href="paths.gerantDashboard"
                             :class="navLinkClass(paths.gerantDashboard)"
